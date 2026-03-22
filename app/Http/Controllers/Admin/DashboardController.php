@@ -143,7 +143,7 @@ class DashboardController extends Controller
             ->leftJoin('attendances', 'students.id', '=', 'attendances.student_id')
             ->where('attendances.status', 'absent')
             ->where('attendances.date', '>=', Carbon::now()->subDays(30))
-            ->groupBy('students.id')
+            ->groupBy('students.id', 'students.user_id', 'students.class_id', 'students.section_id', 'students.status', 'students.student_code', 'students.date_of_birth', 'students.address', 'students.created_at', 'students.updated_at')
             ->orderBy('absent_count', 'desc')
             ->limit(5)
             ->get();
