@@ -138,7 +138,7 @@ class DashboardController extends Controller
 
         // الطلاب الأكثر غياباً (آخر 30 يوم)
         $mostAbsentStudents = Student::with(['user', 'class', 'section'])
-            ->select('students.id', 'students.user_id', 'students.class_id', 'students.section_id', 'students.status', 'students.roll_number', 'students.phone', 'students.address', 'students.date_of_birth', 'students.created_at', 'students.updated_at')
+            ->select('students.id', 'students.user_id', 'students.class_id', 'students.section_id', 'students.status', 'students.student_code', 'students.date_of_birth', 'students.address', 'students.created_at', 'students.updated_at')
             ->selectRaw('COUNT(attendances.id) as absent_count')
             ->leftJoin('attendances', 'students.id', '=', 'attendances.student_id')
             ->where('attendances.status', 'absent')
