@@ -5,176 +5,227 @@
 @stop
 
 @section('content')
-    <!-- Start::app-content -->
     <div class="main-content app-content">
         <div class="container-fluid">
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1">تفاصيل الطالب</h5>
+
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>تفاصيل الطالب</h1>
+                    <p>{{ $student->user->name }} — {{ $student->student_code }}</p>
                 </div>
-                <div>
-                    <a href="{{ route('admin.students.edit', $student->id) }}" class="btn btn-primary btn-sm">تعديل</a>
-                    <a href="{{ route('admin.students.index') }}" class="btn btn-secondary btn-sm">العودة</a>
+                <div class="admin-page-header-actions">
+                    <a href="{{ route('admin.students.edit', $student->id) }}" class="admin-btn admin-btn-primary">
+                        <i class="ri-edit-line"></i>
+                        تعديل
+                    </a>
+                    <a href="{{ route('admin.students.index') }}" class="admin-btn admin-btn-secondary">
+                        <i class="ri-arrow-right-line"></i>
+                        العودة
+                    </a>
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row g-3">
+                {{-- بطاقة الملف الشخصي --}}
                 <div class="col-xl-4">
-                    <div class="card">
-                        <div class="card-body text-center">
-                            @if($student->photo)
-                                <img src="{{ asset('storage/' . $student->photo) }}" alt="{{ $student->user->name }}" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    <div class="admin-page-card admin-profile-card">
+                        <div class="admin-profile-body">
+                            @if ($student->photo)
+                                <img src="{{ asset('storage/' . $student->photo) }}" alt="{{ $student->user->name }}"
+                                     class="admin-profile-avatar">
                             @else
-                                <div class="avatar avatar-xl rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mb-3" style="width: 150px; height: 150px; margin: 0 auto;">
-                                    <span style="font-size: 48px;">{{ substr($student->user->name, 0, 1) }}</span>
+                                <div class="admin-profile-avatar-initial">
+                                    {{ mb_substr($student->user->name, 0, 1) }}
                                 </div>
                             @endif
-                            <h4 class="mb-1">{{ $student->user->name }}</h4>
-                            <p class="text-muted mb-0">{{ $student->student_code }}</p>
-                            <p class="text-muted mb-3">{{ $student->user->email }}</p>
-                            @if($student->status == 'active')
-                                <span class="badge bg-success">نشط</span>
-                            @elseif($student->status == 'graduated')
-                                <span class="badge bg-info">متخرج</span>
-                            @elseif($student->status == 'transferred')
-                                <span class="badge bg-warning">منقول</span>
+
+                            <h2 class="admin-profile-name">{{ $student->user->name }}</h2>
+                            <p class="admin-profile-code">{{ $student->student_code }}</p>
+
+                            @if ($student->user->email)
+                                <div class="admin-profile-email">
+                                    <a href="mailto:{{ $student->user->email }}">{{ $student->user->email }}</a>
+                                    <button type="button" class="admin-copy-btn" data-copy-email="{{ $student->user->email }}" title="نسخ البريد">
+                                        <i class="ri-file-copy-line"></i>
+                                    </button>
+                                </div>
+                            @endif
+
+                            @if ($student->status === 'active')
+                                <span class="admin-badge admin-badge-success">نشط</span>
+                            @elseif ($student->status === 'graduated')
+                                <span class="admin-badge admin-badge-role">متخرج</span>
+                            @elseif ($student->status === 'transferred')
+                                <span class="admin-badge admin-badge-warning">منقول</span>
                             @else
-                                <span class="badge bg-danger">معلق</span>
+                                <span class="admin-badge admin-badge-danger">معلق</span>
                             @endif
                         </div>
-                    </div>
 
-                    @if($student->birth_certificate || $student->health_certificate)
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <h5 class="card-title">الملفات</h5>
+                        @if ($student->birth_certificate || $student->health_certificate)
+                            <div class="card-section-title">
+                                <i class="ri-folder-line me-1"></i> الملفات
                             </div>
-                            <div class="card-body">
-                                @if($student->birth_certificate)
-                                    <div class="mb-2">
-                                        <a href="{{ asset('storage/' . $student->birth_certificate) }}" target="_blank" class="btn btn-sm btn-info w-100">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px; vertical-align: middle;">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                                <polyline points="14 2 14 8 20 8"></polyline>
-                                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                                <polyline points="10 9 9 9 8 9"></polyline>
-                                            </svg>
-                                            شهادة الميلاد
-                                        </a>
-                                    </div>
+                            <div class="card-section-body">
+                                @if ($student->birth_certificate)
+                                    <a href="{{ asset('storage/' . $student->birth_certificate) }}" target="_blank" class="admin-file-btn">
+                                        <i class="ri-file-text-line"></i>
+                                        شهادة الميلاد
+                                    </a>
                                 @endif
-                                @if($student->health_certificate)
-                                    <div>
-                                        <a href="{{ asset('storage/' . $student->health_certificate) }}" target="_blank" class="btn btn-sm btn-info w-100">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 5px; vertical-align: middle;">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                                <polyline points="14 2 14 8 20 8"></polyline>
-                                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                                <polyline points="10 9 9 9 8 9"></polyline>
-                                            </svg>
-                                            الشهادة الصحية
-                                        </a>
-                                    </div>
+                                @if ($student->health_certificate)
+                                    <a href="{{ asset('storage/' . $student->health_certificate) }}" target="_blank" class="admin-file-btn">
+                                        <i class="ri-heart-pulse-line"></i>
+                                        الشهادة الصحية
+                                    </a>
                                 @endif
                             </div>
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 </div>
+
+                {{-- التفاصيل --}}
                 <div class="col-xl-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="card-title">المعلومات الشخصية</h4>
+                    {{-- المعلومات الشخصية --}}
+                    <div class="admin-page-card admin-detail-card">
+                        <div class="admin-detail-card-head">
+                            <div class="section-icon-sm admin-section-icon-blue">
+                                <i class="ri-user-line"></i>
+                            </div>
+                            <h3>المعلومات الشخصية</h3>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>رقم الهاتف:</strong> {{ $student->user->phone ?? '-' }}</p>
-                                    <p><strong>تاريخ الميلاد:</strong> {{ $student->date_of_birth ? $student->date_of_birth->format('Y-m-d') : '-' }}</p>
-                                    <p><strong>الجنس:</strong> {{ $student->gender == 'male' ? 'ذكر' : ($student->gender == 'female' ? 'أنثى' : '-') }}</p>
-                                    <p><strong>العنوان:</strong> {{ $student->address ?? '-' }}</p>
+                        <div class="admin-detail-card-body">
+                            <div class="admin-detail-grid">
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">رقم الهاتف</span>
+                                    <span class="detail-value">{{ $student->user->phone ?? '—' }}</span>
                                 </div>
-                                <div class="col-md-6">
-                                    <p><strong>تاريخ التسجيل:</strong> {{ $student->enrollment_date ? $student->enrollment_date->format('Y-m-d') : '-' }}</p>
-                                    <p><strong>ولي الأمر الأساسي:</strong> {{ $student->parent_guardian ?? '-' }}</p>
-                                    <p><strong>جهة الاتصال في الطوارئ:</strong> {{ $student->emergency_contact ?? '-' }}</p>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">تاريخ الميلاد</span>
+                                    <span class="detail-value">{{ $student->date_of_birth ? $student->date_of_birth->format('Y-m-d') : '—' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">الجنس</span>
+                                    <span class="detail-value">{{ $student->gender === 'male' ? 'ذكر' : ($student->gender === 'female' ? 'أنثى' : '—') }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">العنوان</span>
+                                    <span class="detail-value">{{ $student->address ?? '—' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">تاريخ التسجيل</span>
+                                    <span class="detail-value">{{ $student->enrollment_date ? $student->enrollment_date->format('Y-m-d') : '—' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">ولي الأمر الأساسي</span>
+                                    <span class="detail-value">{{ $student->parent_guardian ?? '—' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">جهة الاتصال في الطوارئ</span>
+                                    <span class="detail-value">{{ $student->emergency_contact ?? '—' }}</span>
                                 </div>
                             </div>
-                            @if($student->medical_notes)
-                                <div class="mt-3">
-                                    <p><strong>ملاحظات طبية:</strong></p>
-                                    <p class="text-muted">{{ $student->medical_notes }}</p>
+                            @if ($student->medical_notes)
+                                <div class="mt-3 pt-3 border-top">
+                                    <span class="detail-label d-block mb-1">ملاحظات طبية</span>
+                                    <p class="detail-value mb-0" style="font-weight: 500; line-height: 1.6;">{{ $student->medical_notes }}</p>
                                 </div>
                             @endif
                         </div>
                     </div>
 
-                    <div class="card mt-3">
-                        <div class="card-header">
-                            <h4 class="card-title">البيانات الأكاديمية</h4>
+                    {{-- البيانات الأكاديمية --}}
+                    <div class="admin-page-card admin-detail-card">
+                        <div class="admin-detail-card-head">
+                            <div class="section-icon-sm admin-section-icon-green">
+                                <i class="ri-graduation-cap-line"></i>
+                            </div>
+                            <h3>البيانات الأكاديمية</h3>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <p><strong>المرحلة:</strong> {{ $student->class->grade->name ?? '-' }}</p>
-                                    <p><strong>الصف:</strong> {{ $student->class->name ?? '-' }}</p>
+                        <div class="admin-detail-card-body">
+                            <div class="admin-detail-grid">
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">المرحلة</span>
+                                    <span class="detail-value">{{ $student->class->grade->name ?? '—' }}</span>
                                 </div>
-                                <div class="col-md-6">
-                                    <p><strong>الفصل:</strong> {{ $student->section->name ?? '-' }}</p>
-                                    <p><strong>الحالة:</strong> 
-                                        @if($student->status == 'active')
-                                            <span class="badge bg-success">نشط</span>
-                                        @elseif($student->status == 'graduated')
-                                            <span class="badge bg-info">متخرج</span>
-                                        @elseif($student->status == 'transferred')
-                                            <span class="badge bg-warning">منقول</span>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">الصف</span>
+                                    <span class="detail-value">{{ $student->class->name ?? '—' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">الفصل</span>
+                                    <span class="detail-value">{{ $student->section->name ?? '—' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">الحالة</span>
+                                    <span class="detail-value">
+                                        @if ($student->status === 'active')
+                                            <span class="admin-badge admin-badge-success">نشط</span>
+                                        @elseif ($student->status === 'graduated')
+                                            <span class="admin-badge admin-badge-role">متخرج</span>
+                                        @elseif ($student->status === 'transferred')
+                                            <span class="admin-badge admin-badge-warning">منقول</span>
                                         @else
-                                            <span class="badge bg-danger">معلق</span>
+                                            <span class="admin-badge admin-badge-danger">معلق</span>
                                         @endif
-                                    </p>
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    @if($student->parents->count() > 0)
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <h4 class="card-title">أولياء الأمور</h4>
+                    {{-- أولياء الأمور --}}
+                    @if ($student->parents->count() > 0)
+                        <div class="admin-page-card admin-detail-card">
+                            <div class="admin-detail-card-head">
+                                <div class="section-icon-sm admin-section-icon-purple">
+                                    <i class="ri-parent-line"></i>
+                                </div>
+                                <h3>أولياء الأمور</h3>
                             </div>
-                            <div class="card-body">
+                            <div class="admin-table-wrap">
                                 <div class="table-responsive">
-                                    <table class="table table-sm">
+                                    <table class="admin-data-table">
                                         <thead>
                                             <tr>
                                                 <th>الاسم</th>
                                                 <th>البريد الإلكتروني</th>
                                                 <th>الهاتف</th>
                                                 <th>العلاقة</th>
-                                                <th>نوع</th>
+                                                <th>النوع</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($student->parents as $parent)
+                                            @foreach ($student->parents as $parent)
                                                 <tr>
-                                                    <td>{{ $parent->user->name }}</td>
-                                                    <td>{{ $parent->user->email }}</td>
-                                                    <td>{{ $parent->user->phone ?? '-' }}</td>
+                                                    <td><strong>{{ $parent->user->name }}</strong></td>
                                                     <td>
-                                                        @if($parent->pivot->relationship_type == 'father')
+                                                        @if ($parent->user->email)
+                                                            <div class="admin-email-cell">
+                                                                <a href="mailto:{{ $parent->user->email }}" class="admin-email-link">{{ $parent->user->email }}</a>
+                                                                <button type="button" class="admin-copy-btn" data-copy-email="{{ $parent->user->email }}">
+                                                                    <i class="ri-file-copy-line"></i>
+                                                                </button>
+                                                            </div>
+                                                        @else
+                                                            —
+                                                        @endif
+                                                    </td>
+                                                    <td>{{ $parent->user->phone ?? '—' }}</td>
+                                                    <td>
+                                                        @if ($parent->pivot->relationship_type === 'father')
                                                             أب
-                                                        @elseif($parent->pivot->relationship_type == 'mother')
+                                                        @elseif ($parent->pivot->relationship_type === 'mother')
                                                             أم
                                                         @else
                                                             ولي أمر
                                                         @endif
                                                     </td>
                                                     <td>
-                                                        @if($parent->pivot->is_primary)
-                                                            <span class="badge bg-primary">أساسي</span>
+                                                        @if ($parent->pivot->is_primary)
+                                                            <span class="admin-badge admin-badge-role">أساسي</span>
                                                         @else
-                                                            <span class="badge bg-secondary">ثانوي</span>
+                                                            <span class="admin-badge admin-badge-muted">ثانوي</span>
                                                         @endif
                                                     </td>
                                                 </tr>
@@ -186,14 +237,18 @@
                         </div>
                     @endif
 
-                    @if($student->attendances->count() > 0)
-                        <div class="card mt-3">
-                            <div class="card-header">
-                                <h4 class="card-title">سجل الحضور الأخير</h4>
+                    {{-- سجل الحضور --}}
+                    @if ($student->attendances->count() > 0)
+                        <div class="admin-page-card admin-detail-card">
+                            <div class="admin-detail-card-head">
+                                <div class="section-icon-sm admin-section-icon-amber">
+                                    <i class="ri-calendar-check-line"></i>
+                                </div>
+                                <h3>سجل الحضور الأخير</h3>
                             </div>
-                            <div class="card-body">
+                            <div class="admin-table-wrap">
                                 <div class="table-responsive">
-                                    <table class="table table-sm">
+                                    <table class="admin-data-table">
                                         <thead>
                                             <tr>
                                                 <th>التاريخ</th>
@@ -202,15 +257,22 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($student->attendances->take(10) as $attendance)
+                                            @foreach ($student->attendances->take(10) as $attendance)
                                                 <tr>
                                                     <td>{{ $attendance->date->format('Y-m-d') }}</td>
                                                     <td>
-                                                        <span class="badge bg-{{ $attendance->status_color }}">
-                                                            {{ $attendance->status_label }}
-                                                        </span>
+                                                        @php
+                                                            $badgeClass = match($attendance->status) {
+                                                                'present' => 'admin-badge-success',
+                                                                'absent' => 'admin-badge-danger',
+                                                                'late' => 'admin-badge-warning',
+                                                                'excused' => 'admin-badge-role',
+                                                                default => 'admin-badge-muted',
+                                                            };
+                                                        @endphp
+                                                        <span class="admin-badge {{ $badgeClass }}">{{ $attendance->status_label }}</span>
                                                     </td>
-                                                    <td>{{ $attendance->check_in_time ? \Carbon\Carbon::parse($attendance->check_in_time)->format('H:i') : '-' }}</td>
+                                                    <td>{{ $attendance->check_in_time ? \Carbon\Carbon::parse($attendance->check_in_time)->format('H:i') : '—' }}</td>
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -221,7 +283,15 @@
                     @endif
                 </div>
             </div>
+
         </div>
     </div>
 @stop
 
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.AdminTables) AdminTables.initCopyButtons(document);
+    });
+</script>
+@endpush

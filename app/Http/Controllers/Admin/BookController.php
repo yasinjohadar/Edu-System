@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Book;
 use App\Models\BookCategory;
@@ -10,13 +11,12 @@ use Illuminate\Support\Facades\Storage;
 
 class BookController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:book-list')->only('index', 'show');
-        $this->middleware('permission:book-create')->only('create', 'store');
-        $this->middleware('permission:book-edit')->only('edit', 'update');
-        $this->middleware('permission:book-delete')->only('destroy');
+        $this->authorizeAdminResource('book');
     }
 
     public function index(Request $request)

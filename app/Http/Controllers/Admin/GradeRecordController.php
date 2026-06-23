@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\GradeRecord;
 use App\Models\Student;
@@ -13,12 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class GradeRecordController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
-        $this->middleware('permission:grade-list|grade-create|grade-edit|grade-delete', ['only' => ['index', 'show']]);
-        $this->middleware('permission:grade-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:grade-edit', ['only' => ['edit', 'update']]);
-        $this->middleware('permission:grade-delete', ['only' => ['destroy']]);
+        $this->middleware('auth');
+        $this->authorizeAdminResource('grade');
     }
 
     /**
@@ -26,34 +27,74 @@ class GradeRecordController extends Controller
      */
     public function index(Request $request)
     {
+        $gradeRecords = $this->buildGradeRecordsQuery($request)
+            ->paginate(50)
+            ->withQueryString();
+
+        $examTypes = $this->examTypes();
+        $semesters = $this->semesters();
+
+        $subjects = Subject::where('is_active', true)->orderBy('name')->get();
+        $sections = Section::with('class')->where('is_active', true)->orderBy('name')->get();
+        $academicYears = GradeRecord::distinct()->pluck('academic_year')->filter()->sort()->reverse();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.grade-records-table-body', compact('gradeRecords'))->render(),
+                'extra' => view('admin.partials.grade-records-table-footer', compact('gradeRecords'))->render(),
+                'from' => $gradeRecords->firstItem(),
+                'to' => $gradeRecords->lastItem(),
+                'total' => $gradeRecords->total(),
+            ]);
+        }
+
+        return view('admin.pages.grade-records.index', compact(
+            'gradeRecords',
+            'subjects',
+            'sections',
+            'examTypes',
+            'semesters',
+            'academicYears'
+        ));
+    }
+
+    private function buildGradeRecordsQuery(Request $request)
+    {
         $query = GradeRecord::with(['student.user', 'subject', 'teacher.user']);
 
-        // فلترة حسب الطالب
+        if ($request->filled('query')) {
+            $search = $request->input('query');
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('student', function ($sq) use ($search) {
+                    $sq->where('student_code', 'like', "%{$search}%")
+                        ->orWhereHas('user', function ($uq) use ($search) {
+                            $uq->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+            });
+        }
+
         if ($request->filled('student_id')) {
             $query->where('student_id', $request->student_id);
         }
 
-        // فلترة حسب المادة
         if ($request->filled('subject_id')) {
             $query->where('subject_id', $request->subject_id);
         }
 
-        // فلترة حسب نوع التقييم
         if ($request->filled('exam_type')) {
             $query->where('exam_type', $request->exam_type);
         }
 
-        // فلترة حسب السنة الدراسية
         if ($request->filled('academic_year')) {
             $query->where('academic_year', $request->academic_year);
         }
 
-        // فلترة حسب الفصل الدراسي
         if ($request->filled('semester')) {
             $query->where('semester', $request->semester);
         }
 
-        // فلترة حسب الفصل
         if ($request->filled('section_id')) {
             $sectionId = $request->section_id;
             $query->whereHas('student', function ($q) use ($sectionId) {
@@ -61,15 +102,12 @@ class GradeRecordController extends Controller
             });
         }
 
-        $gradeRecords = $query->orderBy('exam_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(50);
+        return $query->orderBy('exam_date', 'desc')->orderBy('created_at', 'desc');
+    }
 
-        $students = Student::with('user')->where('status', 'active')->get();
-        $subjects = Subject::where('is_active', true)->get();
-        $sections = Section::with('class')->where('is_active', true)->get();
-        
-        $examTypes = [
+    private function examTypes(): array
+    {
+        return [
             'quiz' => 'اختبار قصير',
             'assignment' => 'واجب',
             'midterm' => 'امتحان نصفي',
@@ -79,25 +117,15 @@ class GradeRecordController extends Controller
             'homework' => 'واجب منزلي',
             'other' => 'أخرى',
         ];
+    }
 
-        $semesters = [
+    private function semesters(): array
+    {
+        return [
             'first' => 'الفصل الأول',
             'second' => 'الفصل الثاني',
             'summer' => 'الفصل الصيفي',
         ];
-
-        // الحصول على السنوات الدراسية المتاحة
-        $academicYears = GradeRecord::distinct()->pluck('academic_year')->filter()->sort()->reverse();
-
-        return view('admin.pages.grade-records.index', compact(
-            'gradeRecords', 
-            'students', 
-            'subjects', 
-            'sections',
-            'examTypes',
-            'semesters',
-            'academicYears'
-        ));
     }
 
     /**
@@ -126,22 +154,8 @@ class GradeRecordController extends Controller
             }
         }
 
-        $examTypes = [
-            'quiz' => 'اختبار قصير',
-            'assignment' => 'واجب',
-            'midterm' => 'امتحان نصفي',
-            'final' => 'امتحان نهائي',
-            'project' => 'مشروع',
-            'participation' => 'مشاركة',
-            'homework' => 'واجب منزلي',
-            'other' => 'أخرى',
-        ];
-
-        $semesters = [
-            'first' => 'الفصل الأول',
-            'second' => 'الفصل الثاني',
-            'summer' => 'الفصل الصيفي',
-        ];
+        $examTypes = $this->examTypes();
+        $semesters = $this->semesters();
 
         // السنة الدراسية الحالية (يمكن تحسينها لاحقاً)
         $currentYear = date('Y');
@@ -249,22 +263,8 @@ class GradeRecordController extends Controller
         $subjects = Subject::where('is_active', true)->get();
         $teachers = Teacher::with('user')->get();
 
-        $examTypes = [
-            'quiz' => 'اختبار قصير',
-            'assignment' => 'واجب',
-            'midterm' => 'امتحان نصفي',
-            'final' => 'امتحان نهائي',
-            'project' => 'مشروع',
-            'participation' => 'مشاركة',
-            'homework' => 'واجب منزلي',
-            'other' => 'أخرى',
-        ];
-
-        $semesters = [
-            'first' => 'الفصل الأول',
-            'second' => 'الفصل الثاني',
-            'summer' => 'الفصل الصيفي',
-        ];
+        $examTypes = $this->examTypes();
+        $semesters = $this->semesters();
 
         return view('admin.pages.grade-records.edit', compact('gradeRecord', 'subjects', 'teachers', 'examTypes', 'semesters'));
     }
@@ -305,6 +305,7 @@ class GradeRecordController extends Controller
 
         $validated['percentage'] = round($percentage, 2);
         $validated['grade'] = $grade;
+        $validated['is_published'] = (bool) $request->input('is_published', 0);
 
         $gradeRecord->update($validated);
 

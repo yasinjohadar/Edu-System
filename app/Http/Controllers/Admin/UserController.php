@@ -12,35 +12,17 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-    // public function __construct()
-    // {
-    //     // يمكنه فقط رؤية قائمة المستخدمين (index)
-    //     $this->middleware(['permission:user-list'])->only('index');
-
-    //     // يمكنه فقط إنشاء مستخدم جديد (create + store)
-    //     $this->middleware(['permission:user-create'])->only(['create', 'store']);
-
-    //     // يمكنه فقط تعديل المستخدم (edit + update)
-    //     $this->middleware(['permission:user-edit'])->only(['edit', 'update']);
-
-    //     // يمكنه فقط حذف المستخدم (destroy)
-    //     $this->middleware(['permission:user-delete'])->only('destroy');
-
-    //     // يمكنه فقط رؤية ملف المستخدم (show)
-    //     $this->middleware(['permission:user-show'])->only('show');
-    // }
-
     public function __construct()
-{
-    // تأكد أن المستخدم مصادق أولًا ثم تحقق من الصلاحيات
-    $this->middleware('auth');
-
-    $this->middleware('permission:user-list')->only('index');
-    $this->middleware('permission:user-create')->only(['create', 'store']);
-    $this->middleware('permission:user-edit')->only(['edit', 'update']);
-    $this->middleware('permission:user-delete')->only('destroy');
-    $this->middleware('permission:user-show')->only('show');
-}
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:user-list')->only('index');
+        $this->middleware('permission:user-create')->only(['create', 'store']);
+        $this->middleware('permission:user-edit')->only(['edit', 'update']);
+        $this->middleware('permission:user-delete')->only('destroy');
+        $this->middleware('permission:user-show')->only('show');
+        $this->middleware('permission:user-update-password')->only('updatePassword');
+        $this->middleware('permission:user-toggle-status')->only('toggleStatus');
+    }
 
     /**
      * Display a listing of the resource.
@@ -48,40 +30,59 @@ class UserController extends Controller
 public function index(Request $request)
     {
         $roles = Role::all();
+        $users = $this->buildUsersQuery($request)->paginate(10)->withQueryString();
+        $sessions = $this->getUserSessions($users);
 
-        // جلب آخر جلسات المستخدمين
-        $sessions = DB::table('sessions')
-            ->orderByDesc('last_activity')
-            ->get()
-            ->groupBy('user_id');
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.users-table-body', compact('users', 'sessions'))->render(),
+                'extra' => view('admin.partials.users-table-footer', compact('users'))->render(),
+                'from' => $users->firstItem(),
+                'to' => $users->lastItem(),
+                'total' => $users->total(),
+            ]);
+        }
 
-        // بدء استعلام المستخدمين
-        $usersQuery = User::query();
+        return view('admin.pages.users.index', compact('users', 'roles', 'sessions'));
+    }
 
-        // فلترة حسب البحث (name, email, phone)
+    private function buildUsersQuery(Request $request)
+    {
+        $usersQuery = User::query()->with('roles');
+
         if ($request->filled('query')) {
             $search = $request->input('query');
             $usersQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%")
-                  ->orWhere('phone', 'like', "%$search%");
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
-        // فلترة حسب الحالة
         if ($request->filled('status')) {
             $usersQuery->where('status', $request->input('status'));
         }
 
-        // فلترة حسب الحالة النشطة
         if ($request->filled('is_active')) {
-            $usersQuery->where('is_active', $request->input('is_active'));
+            $usersQuery->where('is_active', $request->boolean('is_active'));
         }
 
-        // تنفيذ الاستعلام
-        $users = $usersQuery->paginate(10);
+        return $usersQuery->latest('id');
+    }
 
-        return view("admin.pages.users.index", compact("users", "roles", "sessions"));
+    private function getUserSessions($users)
+    {
+        $userIds = $users->pluck('id');
+
+        if ($userIds->isEmpty()) {
+            return collect();
+        }
+
+        return DB::table('sessions')
+            ->whereIn('user_id', $userIds)
+            ->orderByDesc('last_activity')
+            ->get()
+            ->groupBy('user_id');
     }
 
 

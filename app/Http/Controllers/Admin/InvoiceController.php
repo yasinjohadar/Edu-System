@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -14,29 +15,59 @@ use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
-        $this->middleware('permission:invoice-list|invoice-create|invoice-edit|invoice-delete', ['only' => ['index', 'show']]);
-        $this->middleware('permission:invoice-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:invoice-edit', ['only' => ['edit', 'update']]);
-        $this->middleware('permission:invoice-delete', ['only' => ['destroy']]);
+        $this->middleware('auth');
+        $this->authorizeAdminResource('invoice');
     }
 
     public function index(Request $request)
     {
-        $query = Invoice::with(['student.user', 'financialAccount']);
+        $invoices = $this->buildInvoicesQuery($request)->paginate(25)->withQueryString();
+        $students = Student::with('user')->where('status', 'active')->get();
+        $statuses = $this->invoiceStatuses();
 
-        // فلترة حسب الطالب
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.invoices-table-body', compact('invoices'))->render(),
+                'extra' => view('admin.partials.invoices-table-footer', compact('invoices'))->render(),
+                'from' => $invoices->firstItem(),
+                'to' => $invoices->lastItem(),
+                'total' => $invoices->total(),
+            ]);
+        }
+
+        return view('admin.pages.invoices.index', compact('invoices', 'students', 'statuses'));
+    }
+
+    private function buildInvoicesQuery(Request $request)
+    {
+        $query = Invoice::with(['student.user', 'financialAccount'])
+            ->withCount('payments');
+
+        if ($request->filled('query')) {
+            $search = $request->input('query');
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                    ->orWhereHas('student.user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('student', function ($sq) use ($search) {
+                        $sq->where('student_code', 'like', "%{$search}%");
+                    });
+            });
+        }
+
         if ($request->filled('student_id')) {
             $query->where('student_id', $request->student_id);
         }
 
-        // فلترة حسب الحالة
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // فلترة حسب التاريخ
         if ($request->filled('date_from')) {
             $query->whereDate('invoice_date', '>=', $request->date_from);
         }
@@ -45,17 +76,16 @@ class InvoiceController extends Controller
             $query->whereDate('invoice_date', '<=', $request->date_to);
         }
 
-        // فلترة حسب رقم الفاتورة
         if ($request->filled('invoice_number')) {
             $query->where('invoice_number', 'like', '%' . $request->invoice_number . '%');
         }
 
-        $invoices = $query->orderBy('invoice_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(50);
+        return $query->orderBy('invoice_date', 'desc')->orderBy('created_at', 'desc');
+    }
 
-        $students = Student::with('user')->where('status', 'active')->get();
-        $statuses = [
+    private function invoiceStatuses(): array
+    {
+        return [
             'draft' => 'مسودة',
             'pending' => 'معلقة',
             'partial' => 'مدفوعة جزئياً',
@@ -63,8 +93,6 @@ class InvoiceController extends Controller
             'overdue' => 'متأخرة',
             'cancelled' => 'ملغاة',
         ];
-
-        return view('admin.pages.invoices.index', compact('invoices', 'students', 'statuses'));
     }
 
     public function create()

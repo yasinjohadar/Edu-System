@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\StudentAccommodation;
 use Illuminate\Http\Request;
 
 class StudentAccommodationController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('student-accommodation');
     }
 
     public function index()

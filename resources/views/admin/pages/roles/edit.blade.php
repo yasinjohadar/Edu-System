@@ -1,108 +1,113 @@
 @extends('admin.layouts.master')
 
 @section('page-title')
-    تعديل الدور للمستخدم
-@stop
-
-
-
-@section('css')
+    تعديل الدور
 @stop
 
 @section('content')
     @if (\Session::has('success'))
-        <div class="alert alert-success">
-            <ul>
-                <li>{!! \Session::get('success') !!}</li>
-            </ul>
-        </div>
-    @endif
-
-    @if (\Session::has('error'))
-        <div class="alert alert-danger">
-            <ul>
-                <li>{!! \Session::get('error') !!}</li>
-            </ul>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {!! \Session::get('success') !!}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
     @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
                 @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
+                    <li class="small">{{ $error }}</li>
                 @endforeach
             </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-
-    <!-- Start::app-content -->
     <div class="main-content app-content">
         <div class="container-fluid">
 
-            <!-- Page Header -->
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                {{-- <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1"> المستخدمين</h5>
-
-                </div> --}}
-
-
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>تعديل الدور: {{ $role->name }}</h1>
+                    <p>تحديث اسم الدور وصلاحياته</p>
+                </div>
+                <a href="{{ route('roles.index') }}" class="admin-btn admin-btn-secondary">
+                    <i class="ri-arrow-right-line"></i>
+                    العودة للقائمة
+                </a>
             </div>
-            <!-- Page Header Close -->
 
+            <div class="admin-page-card">
+                <form method="POST" action="{{ route('roles.update', $role->id) }}" class="admin-form" id="role-edit-form">
+                    @csrf
+                    @method('PUT')
 
+                    <div class="admin-form-body">
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-blue">
+                                    <i class="ri-shield-user-line"></i>
+                                </div>
+                                <div>
+                                    <h3>بيانات الدور</h3>
+                                    <p>اسم الدور كما يظهر في النظام</p>
+                                </div>
+                            </div>
 
-            <!-- Start::row-1 -->
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="card p-3">
-
-
-
-
-                            <form method="POST" action="{{ route('roles.update', 'test') }}">
-                                @csrf
-                                @method('PUT')
-                                <div class="row">
-
-                                    <div class="mb-3 col">
-                                        <label class="form-label">اسم الروول</label>
-                                        <input type="text" class="form-control" name="name"
-                                            value="{{ $role->name }}">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">اسم الدور <span class="required">*</span></label>
+                                        <input type="text" class="form-control @error('name') is-invalid @enderror"
+                                               name="name" value="{{ old('name', $role->name) }}" required>
+                                        @error('name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-purple">
+                                    <i class="ri-key-2-line"></i>
+                                </div>
                                 <div>
-                                    @foreach ($permissions as $Permission)
-                                        <li style="list-style-type: none"><input type="checkbox"
-                                                name="permissions[{{ $Permission->name }}]" value="{{ $Permission->name }}"
-                                                {{ $role->hasPermissionTo($Permission->name) ? 'checked' : '' }}>{{ $Permission->name }}
-                                        </li>
-                                    @endforeach
+                                    <h3>الصلاحيات</h3>
+                                    <p>حدد الصلاحيات الممنوحة لهذا الدور</p>
                                 </div>
+                            </div>
 
-                                <input type="hidden" value="{{ $role->id }}" name="id">
+                            @include('admin.partials.role-permissions-picker', [
+                                'permissionGroups' => $permissionGroups,
+                                'selectedPermissions' => old('permissions', $role->permissions->pluck('name')->toArray()),
+                            ])
+                            @error('permissions')<div class="text-danger small mt-2">{{ $message }}</div>@enderror
+                        </div>
+                    </div>
 
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal">إغلاق</button>
-                                    <button type="submit" class="btn btn-primary">تعديل بيانات الرول</button>
-                                </div>
-
-                            </form>
-
-
-
-
-                    </div><!-- end card -->
-                </div>
+                    <div class="admin-form-footer">
+                        <a href="{{ route('roles.index') }}" class="admin-btn admin-btn-secondary">
+                            <i class="ri-close-line"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="admin-btn admin-btn-primary">
+                            <i class="ri-save-line"></i>
+                            حفظ التعديلات
+                        </button>
+                    </div>
+                </form>
             </div>
-            <!--End::row-1 -->
-
 
         </div>
     </div>
-    <!-- End::app-content -->
 @stop
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.AdminTables && AdminTables.initAdminForm) {
+            AdminTables.initAdminForm(document.getElementById('role-edit-form'));
+        }
+    });
+</script>
+@endpush

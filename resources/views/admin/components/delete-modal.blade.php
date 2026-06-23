@@ -52,38 +52,3 @@
         </div>
     </div>
 </div>
-
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Handle delete button clicks
-    document.querySelectorAll('[data-delete-url]').forEach(function(button) {
-        button.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            const deleteUrl = this.getAttribute('data-delete-url');
-            const deleteMessage = this.getAttribute('data-delete-message') || 'هل أنت متأكد من رغبتك في حذف هذا العنصر؟';
-            
-            // Set form action
-            const deleteForm = document.getElementById('deleteForm');
-            if (deleteForm) {
-                deleteForm.action = deleteUrl;
-            }
-            
-            // Set message
-            const messageElement = document.getElementById('deleteModalMessage');
-            if (messageElement) {
-                messageElement.innerHTML = deleteMessage;
-            }
-            
-            // Show modal using Bootstrap 5
-            const modalElement = document.getElementById('deleteModal');
-            if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-            }
-        });
-    });
-});
-</script>
-@endpush

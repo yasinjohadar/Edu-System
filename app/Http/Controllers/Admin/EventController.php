@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\EventCategory;
@@ -12,9 +13,12 @@ use Illuminate\Support\Facades\DB;
 
 class EventController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('event');
     }
 
     /**

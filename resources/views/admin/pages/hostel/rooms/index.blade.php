@@ -18,7 +18,9 @@
                     <div class="card">
                         <div class="card-header align-items-center d-flex gap-3">
                             <div class="d-flex gap-2">
-                                <a href="{{ route('admin.rooms.create') }}" class="btn btn-primary btn-sm">إضافة غرفة جديدة</a>
+                                @can('room-create')
+                                    <a href="{{ route('admin.rooms.create') }}" class="btn btn-primary btn-sm">إضافة غرفة جديدة</a>
+                                @endcan
                             </div>
                         </div>
                         <div class="card-body">
@@ -48,8 +50,12 @@
                                                 <td>{{ number_format($room->fee, 2) }}</td>
                                                 <td>
                                                     <div class="d-flex gap-2">
-                                                        <a href="{{ route('admin.rooms.show', $room) }}" class="btn btn-sm btn-info">عرض</a>
-                                                        <a href="{{ route('admin.rooms.edit', $room) }}" class="btn btn-sm btn-primary">تعديل</a>
+                                                        @can('room-show')
+                                                            <a href="{{ route('admin.rooms.show', $room) }}" class="btn btn-sm btn-info">عرض</a>
+                                                        @endcan
+                                                        @can('room-edit')
+                                                            <a href="{{ route('admin.rooms.edit', $room) }}" class="btn btn-sm btn-primary">تعديل</a>
+                                                        @endcan
                                                     </div>
                                                 </td>
                                             </tr>

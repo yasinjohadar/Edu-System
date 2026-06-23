@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\QuestionOption;
@@ -24,6 +25,15 @@ use Illuminate\Support\Facades\Log;
 
 class QuestionController extends Controller
 {
+    use AuthorizesAdminResource;
+
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->authorizeAdminResource('question');
+    }
+
     /**
      * Display a listing of resource.
      */

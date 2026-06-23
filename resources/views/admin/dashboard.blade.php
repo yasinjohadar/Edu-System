@@ -5,232 +5,110 @@
 @stop
 
 @section('content')
-    <!-- Start::app-content -->
     <div class="main-content app-content">
         <div class="container-fluid">
-            <!-- Page Header -->
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div>
-                    <h4 class="mb-0">مرحباً بك، {{ auth()->user()->name }}!</h4>
-                    <p class="mb-0 text-muted">نظرة عامة على النظام التعليمي</p>
+
+            <div class="dashboard-welcome">
+                <h4>مرحباً بك، {{ auth()->user()->name }}!</h4>
+                <p class="mb-0 text-muted">نظرة عامة على النظام التعليمي</p>
+            </div>
+
+            {{-- إحصائيات رئيسية --}}
+            <div class="row g-3 mb-4">
+                @foreach ($dashboardWidgets as $index => $widget)
+                    <div class="col-xl-3 col-lg-6 col-md-6">
+                        <a href="{{ route($widget['route']) }}" class="dashboard-stat-link" style="--card-delay: {{ $index * 0.1 }}s">
+                            <div class="dashboard-stat-card dashboard-stat-{{ $widget['theme'] }}">
+                                <div class="stat-card-shine"></div>
+                                <div class="stat-card-mesh"></div>
+                                <div class="stat-card-bubble stat-card-bubble-1"></div>
+                                <div class="stat-card-bubble stat-card-bubble-2"></div>
+                                <div class="stat-card-bubble stat-card-bubble-3"></div>
+                                <div class="stat-card-glow"></div>
+                                <div class="stat-card-body">
+                                    <div class="stat-card-content">
+                                        <span class="stat-label">{{ $widget['title'] }}</span>
+                                        <span class="stat-value" data-count="{{ $widget['value'] }}">0</span>
+                                        <span class="stat-subtext">{{ $widget['subtext'] }}</span>
+                                    </div>
+                                    <div class="stat-icon-wrap">
+                                        <span class="stat-icon-ring"></span>
+                                        <span class="stat-icon-circle">
+                                            <i class="{{ $widget['icon'] }}"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+
+            {{-- اختصارات سريعة --}}
+            <div class="shortcuts-section mb-4">
+                <div class="shortcuts-section-header">
+                    <span class="shortcuts-section-icon"><i class="ri-flashlight-line"></i></span>
+                    <h5 class="dashboard-section-title mb-0">اختصارات سريعة</h5>
                 </div>
-                <div class="main-dashboard-header-right">
-                    <div>
-                        <label class="fs-13 text-muted">نسبة الحضور هذا الأسبوع</label>
-                        <h5 class="mb-0 fw-semibold">{{ $attendanceStats['week_rate'] }}%</h5>
-                    </div>
-                    <div>
-                        <label class="fs-13 text-muted">المدفوعات هذا الشهر</label>
-                        <h5 class="mb-0 fw-semibold">{{ number_format($financialStats['this_month_payments'], 2) }} ر.س</h5>
-                    </div>
-                    <div>
-                        <label class="fs-13 text-muted">إجمالي الطلاب</label>
-                        <h5 class="mb-0 fw-semibold">{{ $studentsStats['total'] }}</h5>
-                    </div>
+                <div class="row g-3 shortcuts-grid">
+                    @foreach ($quickShortcuts as $index => $shortcut)
+                        <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 col-6">
+                            <a href="{{ route($shortcut['route']) }}"
+                               class="shortcut-card shortcut-theme-{{ $shortcut['color'] }}"
+                               style="--shortcut-delay: {{ $index * 0.05 }}s">
+                                <span class="shortcut-shine"></span>
+                                <span class="shortcut-accent"></span>
+                                <span class="shortcut-icon-wrap">
+                                    <span class="shortcut-icon-ring"></span>
+                                    <span class="shortcut-icon">
+                                        <i class="{{ $shortcut['icon'] }}"></i>
+                                    </span>
+                                </span>
+                                <span class="shortcut-title">{{ $shortcut['title'] }}</span>
+                                <span class="shortcut-desc">{{ $shortcut['desc'] }}</span>
+                                <span class="shortcut-arrow"><i class="ri-arrow-left-s-line"></i></span>
+                            </a>
+                        </div>
+                    @endforeach
                 </div>
             </div>
-            <!-- End Page Header -->
 
-            <!-- إحصائيات سريعة -->
-            <div class="row">
-                <!-- بطاقة الطلاب -->
-                <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-                    <div class="card overflow-hidden sales-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <div class="px-3 pt-3 pb-2 pt-0">
-                            <div>
-                                <h6 class="mb-3 fs-12 text-white">إجمالي الطلاب</h6>
-                            </div>
-                            <div class="pb-0 mt-0">
-                                <div class="d-flex">
-                                    <div>
-                                        <h4 class="fs-20 fw-bold mb-1 text-white">{{ $studentsStats['total'] }}</h4>
-                                        <p class="mb-0 fs-12 text-white op-7">{{ $studentsStats['active'] }} نشط</p>
-                                    </div>
-                                    <span class="float-end my-auto ms-auto">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white op-7">
-                                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="9" cy="7" r="4"></circle>
-                                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
+            {{-- الرسوم البيانية وملخص اليوم --}}
+            <div class="row g-3 mb-4">
+                <div class="col-xl-8 col-lg-7">
+                    <div class="card custom-card h-100">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">تطور الالتحاقات خلال آخر 6 أشهر</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="enrollment-chart"></div>
                         </div>
                     </div>
                 </div>
-
-                <!-- بطاقة المعلمين -->
-                <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-                    <div class="card overflow-hidden sales-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                        <div class="px-3 pt-3 pb-2 pt-0">
-                            <div>
-                                <h6 class="mb-3 fs-12 text-white">إجمالي المعلمين</h6>
-                            </div>
-                            <div class="pb-0 mt-0">
-                                <div class="d-flex">
-                                    <div>
-                                        <h4 class="fs-20 fw-bold mb-1 text-white">{{ $teachersStats['total'] }}</h4>
-                                        <p class="mb-0 fs-12 text-white op-7">{{ $teachersStats['active'] }} نشط</p>
-                                    </div>
-                                    <span class="float-end my-auto ms-auto">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white op-7">
-                                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                            <circle cx="12" cy="7" r="4"></circle>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
+                <div class="col-xl-4 col-lg-5">
+                    <div class="card custom-card h-100">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">ملخص اليوم</h6>
                         </div>
-                    </div>
-                </div>
-
-                <!-- بطاقة الحضور اليوم -->
-                <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-                    <div class="card overflow-hidden sales-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                        <div class="px-3 pt-3 pb-2 pt-0">
-                            <div>
-                                <h6 class="mb-3 fs-12 text-white">الحضور اليوم</h6>
-                            </div>
-                            <div class="pb-0 mt-0">
-                                <div class="d-flex">
-                                    <div>
-                                        <h4 class="fs-20 fw-bold mb-1 text-white">{{ $attendanceStats['today_present'] }}</h4>
-                                        <p class="mb-0 fs-12 text-white op-7">{{ $attendanceStats['today_absent'] }} غائب</p>
+                        <div class="card-body pt-2">
+                            @foreach ($todaySummary as $item)
+                                <div class="today-summary-item">
+                                    <div class="d-flex align-items-center">
+                                        <span class="summary-icon menu-icon-box menu-icon-{{ $item['color'] }} menu-icon-sm">
+                                            <i class="{{ $item['icon'] }}"></i>
+                                        </span>
+                                        <span class="summary-label">{{ $item['label'] }}</span>
                                     </div>
-                                    <span class="float-end my-auto ms-auto">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white op-7">
-                                            <circle cx="12" cy="12" r="10"></circle>
-                                            <polyline points="12 6 12 12 16 14"></polyline>
-                                        </svg>
-                                    </span>
+                                    <span class="summary-value">{{ $item['value'] }}</span>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- بطاقة المالية -->
-                <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-                    <div class="card overflow-hidden sales-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
-                        <div class="px-3 pt-3 pb-2 pt-0">
-                            <div>
-                                <h6 class="mb-3 fs-12 text-white">إجمالي المدفوعات</h6>
-                            </div>
-                            <div class="pb-0 mt-0">
-                                <div class="d-flex">
-                                    <div>
-                                        <h4 class="fs-20 fw-bold mb-1 text-white">{{ number_format($financialStats['total_payments'], 0) }}</h4>
-                                        <p class="mb-0 fs-12 text-white op-7">{{ number_format($financialStats['overdue_amount'], 0) }} متأخر</p>
-                                    </div>
-                                    <span class="float-end my-auto ms-auto">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white op-7">
-                                            <line x1="12" y1="1" x2="12" y2="23"></line>
-                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                                        </svg>
-                                    </span>
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- End إحصائيات سريعة -->
 
-            <!-- إحصائيات إضافية -->
+            {{-- الجداول --}}
             <div class="row">
-                <!-- بطاقة الفواتير -->
-                <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1 text-muted">إجمالي الفواتير</h6>
-                                    <h4 class="mb-0 fw-bold">{{ $financialStats['total_invoices'] }}</h4>
-                                    <p class="mb-0 text-muted fs-12">{{ number_format($financialStats['total_invoices_amount'], 2) }} ر.س</p>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                                        <polyline points="10 9 9 9 8 9"></polyline>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- بطاقة الفواتير المعلقة -->
-                <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1 text-muted">فواتير معلقة</h6>
-                                    <h4 class="mb-0 fw-bold text-warning">{{ $financialStats['pending_invoices'] }}</h4>
-                                    <p class="mb-0 text-muted fs-12">{{ number_format($financialStats['pending_amount'], 2) }} ر.س</p>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f093fb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- بطاقة الفواتير المتأخرة -->
-                <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1 text-muted">فواتير متأخرة</h6>
-                                    <h4 class="mb-0 fw-bold text-danger">{{ $financialStats['overdue_invoices'] }}</h4>
-                                    <p class="mb-0 text-muted fs-12">{{ number_format($financialStats['overdue_amount'], 2) }} ر.س</p>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f5576c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- بطاقة المعدل العام -->
-                <div class="col-xl-3 col-lg-6 col-md-6 col-xm-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-grow-1">
-                                    <h6 class="mb-1 text-muted">المعدل العام</h6>
-                                    <h4 class="mb-0 fw-bold text-success">{{ number_format($gradeStats['average_percentage'], 1) }}%</h4>
-                                    <p class="mb-0 text-muted fs-12">{{ $gradeStats['total_records'] }} سجل</p>
-                                </div>
-                                <div class="flex-shrink-0">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#43e97b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                    </svg>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- End إحصائيات إضافية -->
-
-            <!-- الجداول والإشعارات -->
-            <div class="row">
-                <!-- آخر الطلاب المسجلين -->
                 <div class="col-xl-6 col-lg-12">
                     <div class="card">
                         <div class="card-header pb-1">
@@ -252,12 +130,8 @@
                                         @forelse($recentStudents as $student)
                                             <tr>
                                                 <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="flex-grow-1">
-                                                            <h6 class="mb-0 fs-14">{{ $student->user->name ?? 'غير محدد' }}</h6>
-                                                            <p class="mb-0 text-muted fs-12">{{ $student->student_code }}</p>
-                                                        </div>
-                                                    </div>
+                                                    <h6 class="mb-0 fs-14">{{ $student->user->name ?? 'غير محدد' }}</h6>
+                                                    <p class="mb-0 text-muted fs-12">{{ $student->student_code }}</p>
                                                 </td>
                                                 <td>{{ $student->class->name ?? 'غير محدد' }}</td>
                                                 <td>{{ $student->section->name ?? 'غير محدد' }}</td>
@@ -280,7 +154,6 @@
                     </div>
                 </div>
 
-                <!-- آخر الفواتير -->
                 <div class="col-xl-6 col-lg-12">
                     <div class="card">
                         <div class="card-header pb-1">
@@ -309,7 +182,7 @@
                                                 <td>{{ $invoice->student->user->name ?? 'غير محدد' }}</td>
                                                 <td>{{ number_format($invoice->total_amount, 2) }} ر.س</td>
                                                 <td>
-                                                    <span class="badge 
+                                                    <span class="badge
                                                         @if($invoice->status == 'paid') bg-success
                                                         @elseif($invoice->status == 'overdue') bg-danger
                                                         @elseif($invoice->status == 'partial') bg-warning
@@ -337,107 +210,7 @@
                 </div>
             </div>
 
-            <!-- الفواتير المتأخرة والطلاب الأكثر غياباً -->
-            <div class="row">
-                <!-- الفواتير المتأخرة -->
-                <div class="col-xl-6 col-lg-12">
-                    <div class="card border-danger">
-                        <div class="card-header bg-danger text-white">
-                            <h3 class="card-title mb-0 text-white">⚠️ فواتير متأخرة</h3>
-                            <p class="fs-12 mb-0 text-white op-7">فواتير تجاوزت تاريخ الاستحقاق</p>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>رقم الفاتورة</th>
-                                            <th>الطالب</th>
-                                            <th>المتبقي</th>
-                                            <th>تاريخ الاستحقاق</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($overdueInvoices as $invoice)
-                                            <tr>
-                                                <td>
-                                                    <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="text-danger">
-                                                        {{ $invoice->invoice_number }}
-                                                    </a>
-                                                </td>
-                                                <td>{{ $invoice->student->user->name ?? 'غير محدد' }}</td>
-                                                <td class="text-danger fw-bold">{{ number_format($invoice->remaining_amount, 2) }} ر.س</td>
-                                                <td>{{ $invoice->due_date->format('Y-m-d') }}</td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="4" class="text-center text-muted">لا توجد فواتير متأخرة</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                            @if($overdueInvoices->count() > 0)
-                                <div class="card-footer text-center">
-                                    <a href="{{ route('admin.invoices.index', ['status' => 'overdue']) }}" class="btn btn-sm btn-danger">عرض جميع الفواتير المتأخرة</a>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-
-                <!-- الطلاب الأكثر غياباً -->
-                <div class="col-xl-6 col-lg-12">
-                    <div class="card border-warning">
-                        <div class="card-header bg-warning text-white">
-                            <h3 class="card-title mb-0 text-white">⚠️ طلاب يحتاجون متابعة</h3>
-                            <p class="fs-12 mb-0 text-white op-7">الطلاب الأكثر غياباً (آخر 30 يوم)</p>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>الاسم</th>
-                                            <th>الصف</th>
-                                            <th>عدد الغيابات</th>
-                                            <th>الإجراء</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($mostAbsentStudents as $student)
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="flex-grow-1">
-                                                            <h6 class="mb-0 fs-14">{{ $student->user->name ?? 'غير محدد' }}</h6>
-                                                            <p class="mb-0 text-muted fs-12">{{ $student->student_code }}</p>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>{{ $student->class->name ?? 'غير محدد' }}</td>
-                                                <td>
-                                                    <span class="badge bg-danger">{{ $student->absent_count ?? 0 }}</span>
-                                                </td>
-                                                <td>
-                                                    <a href="{{ route('admin.students.show', $student->id) }}" class="btn btn-sm btn-outline-primary">عرض التفاصيل</a>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="4" class="text-center text-muted">لا توجد بيانات</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- آخر المدفوعات -->
-            <div class="row">
+            <div class="row mt-3">
                 <div class="col-xl-12">
                     <div class="card">
                         <div class="card-header pb-1">
@@ -499,5 +272,96 @@
 
         </div>
     </div>
-    <!-- End::app-content -->
 @stop
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.stat-value[data-count]').forEach(function (el) {
+            const target = parseInt(el.getAttribute('data-count'), 10) || 0;
+            const duration = 1400;
+            const start = performance.now();
+
+            function easeOutExpo(t) {
+                return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+            }
+
+            function tick(now) {
+                const progress = Math.min((now - start) / duration, 1);
+                const value = Math.round(easeOutExpo(progress) * target);
+                el.textContent = value.toLocaleString('en-US');
+                if (progress < 1) {
+                    requestAnimationFrame(tick);
+                } else {
+                    el.classList.add('stat-value-done');
+                }
+            }
+
+            requestAnimationFrame(tick);
+        });
+
+        document.querySelectorAll('.shortcut-card').forEach(function (card) {
+            card.addEventListener('click', function (e) {
+                const rect = card.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const ripple = document.createElement('span');
+                ripple.className = 'shortcut-ripple';
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                card.appendChild(ripple);
+                ripple.addEventListener('animationend', function () { ripple.remove(); });
+            });
+        });
+
+        const chartEl = document.querySelector('#enrollment-chart');
+        if (!chartEl || typeof ApexCharts === 'undefined') return;
+
+        const enrollmentData = @json($enrollmentChart);
+
+        new ApexCharts(chartEl, {
+            series: [{
+                name: 'الالتحاقات',
+                data: enrollmentData.map(item => item.count)
+            }],
+            chart: {
+                type: 'area',
+                height: 320,
+                toolbar: { show: false },
+                fontFamily: 'Cairo, sans-serif'
+            },
+            colors: ['#4a7dff'],
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 3 },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.35,
+                    opacityTo: 0.05,
+                }
+            },
+            xaxis: {
+                categories: enrollmentData.map(item => item.label),
+            },
+            yaxis: {
+                labels: {
+                    formatter: function (val) {
+                        return Math.round(val);
+                    }
+                }
+            },
+            grid: {
+                borderColor: '#f1f5f9',
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return val + ' طالب';
+                    }
+                }
+            }
+        }).render();
+    });
+</script>
+@endpush

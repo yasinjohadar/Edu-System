@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Grade;
 use Illuminate\Http\Request;
 
 class GradeController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('grade-level');
     }
 
     /**
@@ -18,13 +22,30 @@ class GradeController extends Controller
      */
     public function index(Request $request)
     {
+        $grades = $this->buildGradesQuery($request)->paginate(10)->withQueryString();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.grades-table-body', compact('grades'))->render(),
+                'extra' => view('admin.partials.grades-table-footer', compact('grades'))->render(),
+                'from' => $grades->firstItem(),
+                'to' => $grades->lastItem(),
+                'total' => $grades->total(),
+            ]);
+        }
+
+        return view('admin.pages.grades.index', compact('grades'));
+    }
+
+    private function buildGradesQuery(Request $request)
+    {
         $gradesQuery = Grade::query()->orderBy('order');
 
         if ($request->filled('query')) {
             $search = $request->input('query');
             $gradesQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('name_en', 'like', "%$search%");
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('name_en', 'like', "%{$search}%");
             });
         }
 
@@ -32,9 +53,7 @@ class GradeController extends Controller
             $gradesQuery->where('is_active', $request->input('is_active'));
         }
 
-        $grades = $gradesQuery->paginate(10);
-
-        return view('admin.pages.grades.index', compact('grades'));
+        return $gradesQuery;
     }
 
     /**
@@ -61,9 +80,12 @@ class GradeController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        Grade::create($request->all());
+        Grade::create([
+            ...$request->except('is_active'),
+            'is_active' => $request->has('is_active'),
+        ]);
 
-        return redirect()->route('grades.index')->with('success', 'تم إنشاء المرحلة بنجاح');
+        return redirect()->route('admin.grades.index')->with('success', 'تم إنشاء المرحلة بنجاح');
     }
 
     /**
@@ -102,9 +124,12 @@ class GradeController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $grade->update($request->all());
+        $grade->update([
+            ...$request->except('is_active'),
+            'is_active' => $request->has('is_active'),
+        ]);
 
-        return redirect()->route('grades.index')->with('success', 'تم تحديث المرحلة بنجاح');
+        return redirect()->route('admin.grades.index')->with('success', 'تم تحديث المرحلة بنجاح');
     }
 
     /**
@@ -115,6 +140,6 @@ class GradeController extends Controller
         $grade = Grade::findOrFail($id);
         $grade->delete();
 
-        return redirect()->route('grades.index')->with('success', 'تم حذف المرحلة بنجاح');
+        return redirect()->route('admin.grades.index')->with('success', 'تم حذف المرحلة بنجاح');
     }
 }

@@ -35,3 +35,5 @@
 
 <!-- Custom Css -->
 <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/admin-pages.css') }}">
+@stack('styles')

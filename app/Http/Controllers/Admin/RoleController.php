@@ -2,107 +2,115 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\Permissions;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 
 class RoleController extends Controller
 {
+    use AuthorizesAdminResource;
 
-public function __construct()
-{
-    // يمكنه فقط رؤية قائمة الصلاحيات (index)
-    $this->middleware(['permission:role-list'])->only('index');
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->authorizeAdminResource('role', false);
+    }
 
-    // يمكنه فقط إنشاء صلاحية جديدة (create + store)
-    $this->middleware(['permission:role-create'])->only(['create', 'store']);
+    public function index(Request $request)
+    {
+        $roles = $this->buildRolesQuery($request)->paginate(15)->withQueryString();
 
-    // يمكنه فقط تعديل الصلاحية (edit + update)
-    $this->middleware(['permission:role-edit'])->only(['edit', 'update']);
-
-    // يمكنه فقط حذف الصلاحية (destroy)
-    $this->middleware(['permission:role-delete'])->only('destroy');
-}
-
-
-
-
-    public function index()
-        {
-            $permissions = Permission::all();
-            $roles = Role::all();
-            return view("admin.pages.roles.index" , compact("roles" , "permissions"));
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.roles-table-body', compact('roles'))->render(),
+                'extra' => view('admin.partials.roles-table-footer', compact('roles'))->render(),
+                'from' => $roles->firstItem(),
+                'to' => $roles->lastItem(),
+                'total' => $roles->total(),
+            ]);
         }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+        return view('admin.pages.roles.index', compact('roles'));
+    }
+
+    private function buildRolesQuery(Request $request)
+    {
+        $query = Role::query()->withCount('permissions')->orderBy('name');
+
+        if ($request->filled('query')) {
+            $search = $request->input('query');
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        return $query;
+    }
+
     public function create()
     {
-        $permissions = Permission::all();
-        $roles = Role::all();
+        $permissionNames = Permission::orderBy('name')->pluck('name');
+        $permissionGroups = Permissions::groupedForPicker($permissionNames);
 
-       return view("admin.pages.roles.create" , compact("roles" , "permissions"));
+        return view('admin.pages.roles.create', compact('permissionGroups'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $role = Role::create([
-            "name" => $request->name
+        $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name',
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|exists:permissions,name',
+        ], [
+            'name.required' => 'اسم الدور مطلوب',
+            'name.unique' => 'اسم الدور مستخدم بالفعل',
         ]);
 
-        $role->syncPermissions($request->permissions);
+        $role = Role::create(['name' => $request->name]);
+        $role->syncPermissions($request->input('permissions', []));
 
-        return back()->with("success" , "تم اضافة الروول بنجاح");
+        return redirect()->route('roles.index')->with('success', 'تم إضافة الدور بنجاح');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(string $id)
     {
-
+        //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
-        $role = Role::findOrFail($id);
-         $permissions = Permission::all();
+        $role = Role::with('permissions')->findOrFail($id);
+        $permissionNames = Permission::orderBy('name')->pluck('name');
+        $permissionGroups = Permissions::groupedForPicker($permissionNames);
 
-
-       return view("admin.pages.roles.edit" , compact("role" , "permissions"));
+        return view('admin.pages.roles.edit', compact('role', 'permissionGroups'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
-        $role = Role::findOrFail($request->id);
+        $role = Role::findOrFail($id);
 
-        $role->update([
+        $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'string|exists:permissions,name',
+        ], [
+            'name.required' => 'اسم الدور مطلوب',
+            'name.unique' => 'اسم الدور مستخدم بالفعل',
+        ]);
 
-            "name" => $request->name
-            ]
-        );
-        $role->syncPermissions($request->permissions);
-        return redirect()->route("roles.index")->with("success" , "تم تعديل الروول بنجاح");
+        $role->update(['name' => $request->name]);
+        $role->syncPermissions($request->input('permissions', []));
+
+        return redirect()->route('roles.index')->with('success', 'تم تعديل الدور بنجاح');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Request $request )
+    public function destroy(string $id)
     {
-        $role = Role::findOrFail($request->id);
+        $role = Role::findOrFail($id);
         $role->delete();
-        return redirect()->route("roles.index")->with("success" , "تم حذف الدور بنجاح");
+
+        return redirect()->route('roles.index')->with('success', 'تم حذف الدور بنجاح');
     }
 }

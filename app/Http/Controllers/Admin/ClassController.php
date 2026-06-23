@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Grade;
 use App\Models\ClassModel;
@@ -9,20 +10,41 @@ use Illuminate\Http\Request;
 
 class ClassController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('class');
     }
 
     public function index(Request $request)
+    {
+        $classes = $this->buildQuery($request)->paginate(10)->withQueryString();
+        $grades = Grade::where('is_active', true)->orderBy('order')->get();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.classes-table-body', compact('classes'))->render(),
+                'extra' => view('admin.partials.classes-table-footer', compact('classes'))->render(),
+                'from' => $classes->firstItem(),
+                'to' => $classes->lastItem(),
+                'total' => $classes->total(),
+            ]);
+        }
+
+        return view('admin.pages.classes.index', compact('classes', 'grades'));
+    }
+
+    private function buildQuery(Request $request)
     {
         $classesQuery = ClassModel::with('grade')->orderBy('order');
 
         if ($request->filled('query')) {
             $search = $request->input('query');
             $classesQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('name_en', 'like', "%$search%");
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('name_en', 'like', "%{$search}%");
             });
         }
 
@@ -34,10 +56,7 @@ class ClassController extends Controller
             $classesQuery->where('is_active', $request->input('is_active'));
         }
 
-        $classes = $classesQuery->paginate(10);
-        $grades = Grade::where('is_active', true)->orderBy('order')->get();
-
-        return view('admin.pages.classes.index', compact('classes', 'grades'));
+        return $classesQuery;
     }
 
     public function create()
@@ -57,7 +76,10 @@ class ClassController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        ClassModel::create($request->all());
+        ClassModel::create([
+            ...$request->except('is_active'),
+            'is_active' => $request->has('is_active'),
+        ]);
 
         return redirect()->route('admin.classes.index')->with('success', 'تم إنشاء الصف بنجاح');
     }
@@ -88,7 +110,10 @@ class ClassController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $class->update($request->all());
+        $class->update([
+            ...$request->except('is_active'),
+            'is_active' => $request->has('is_active'),
+        ]);
 
         return redirect()->route('admin.classes.index')->with('success', 'تم تحديث الصف بنجاح');
     }

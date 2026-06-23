@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\SmtpSetting;
 use Illuminate\Http\Request;
@@ -9,9 +10,12 @@ use Illuminate\Support\Facades\Validator;
 
 class SmtpSettingController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('smtp-setting', false, ['smtp-setting-test' => ['testConnection', 'setDefault', 'toggleActive']]);
     }
 
     /**

@@ -5,214 +5,234 @@
 @stop
 
 @section('content')
-    <!-- Start::app-content -->
+    @php
+        $statusClasses = [
+            'paid' => 'admin-badge-success',
+            'overdue' => 'admin-badge-danger',
+            'partial' => 'admin-badge-warning',
+            'pending' => 'admin-badge-role',
+            'draft' => 'admin-badge-muted',
+            'cancelled' => 'admin-badge-danger',
+        ];
+    @endphp
+
     <div class="main-content app-content">
         <div class="container-fluid">
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1">عرض الفاتورة</h5>
+
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>عرض الفاتورة</h1>
+                    <p>{{ $invoice->invoice_number }} — {{ $invoice->student->user->name ?? 'غير محدد' }}</p>
                 </div>
-                <div>
-                    <a href="{{ route('admin.invoices.index') }}" class="btn btn-secondary">
-                        <i class="fa-solid fa-arrow-right"></i> العودة للقائمة
-                    </a>
+                <div class="admin-page-header-actions">
                     @can('invoice-edit')
-                    @if($invoice->status != 'paid' && $invoice->status != 'cancelled')
-                    <a href="{{ route('admin.invoices.edit', $invoice->id) }}" class="btn btn-warning">
-                        <i class="fa-solid fa-edit"></i> تعديل
-                    </a>
-                    @endif
+                        @if ($invoice->status != 'paid' && $invoice->status != 'cancelled')
+                            <a href="{{ route('admin.invoices.edit', $invoice->id) }}" class="admin-btn admin-btn-primary">
+                                <i class="ri-edit-line"></i>
+                                تعديل
+                            </a>
+                        @endif
                     @endcan
-                    <button onclick="window.print()" class="btn btn-primary">
-                        <i class="fa-solid fa-print"></i> طباعة
+                    <button type="button" onclick="window.print()" class="admin-btn admin-btn-secondary">
+                        <i class="ri-printer-line"></i>
+                        طباعة
                     </button>
+                    <a href="{{ route('admin.invoices.index') }}" class="admin-btn admin-btn-secondary">
+                        <i class="ri-arrow-right-line"></i>
+                        العودة
+                    </a>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="card" id="invoiceCard">
-                        <div class="card-body">
-                            <!-- Header -->
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <h4 class="mb-3">فاتورة مالية</h4>
-                                    <p class="mb-1"><strong>رقم الفاتورة:</strong> {{ $invoice->invoice_number }}</p>
-                                    <p class="mb-1"><strong>تاريخ الفاتورة:</strong> {{ $invoice->invoice_date->format('Y-m-d') }}</p>
-                                    <p class="mb-1"><strong>تاريخ الاستحقاق:</strong> {{ $invoice->due_date->format('Y-m-d') }}</p>
-                                    <p class="mb-0">
-                                        <strong>الحالة:</strong> 
-                                        @if($invoice->status == 'paid')
-                                            <span class="badge bg-success">{{ $invoice->status_name }}</span>
-                                        @elseif($invoice->status == 'overdue')
-                                            <span class="badge bg-danger">{{ $invoice->status_name }}</span>
-                                        @elseif($invoice->status == 'partial')
-                                            <span class="badge bg-warning">{{ $invoice->status_name }}</span>
-                                        @else
-                                            <span class="badge bg-info">{{ $invoice->status_name }}</span>
-                                        @endif
-                                    </p>
+            <div class="admin-page-card" id="invoiceCard">
+                <div class="admin-detail-card">
+                    <div class="admin-detail-card-head">
+                        <h3><i class="ri-file-list-3-line section-icon-sm"></i> تفاصيل الفاتورة</h3>
+                        <span class="admin-badge {{ $statusClasses[$invoice->status] ?? 'admin-badge-muted' }}">{{ $invoice->status_name }}</span>
+                    </div>
+                    <div class="admin-detail-card-body">
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <div class="admin-detail-grid">
+                                    <div class="admin-detail-item">
+                                        <span class="label">رقم الفاتورة</span>
+                                        <span class="value">{{ $invoice->invoice_number }}</span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">تاريخ الفاتورة</span>
+                                        <span class="value">{{ $invoice->invoice_date->format('Y-m-d') }}</span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">تاريخ الاستحقاق</span>
+                                        <span class="value">{{ $invoice->due_date->format('Y-m-d') }}</span>
+                                    </div>
                                 </div>
-                                <div class="col-md-6 text-end">
-                                    <h5>معلومات الطالب</h5>
-                                    <p class="mb-1"><strong>الاسم:</strong> {{ $invoice->student->user->name ?? 'غير محدد' }}</p>
-                                    <p class="mb-1"><strong>رقم القيد:</strong> {{ $invoice->student->student_code }}</p>
-                                    @if($invoice->student->class)
-                                    <p class="mb-1"><strong>الصف:</strong> {{ $invoice->student->class->name }}</p>
-                                    @endif
-                                    @if($invoice->student->section)
-                                    <p class="mb-0"><strong>الفصل:</strong> {{ $invoice->student->section->name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="admin-detail-grid">
+                                    <div class="admin-detail-item">
+                                        <span class="label">الطالب</span>
+                                        <span class="value">{{ $invoice->student->user->name ?? 'غير محدد' }}</span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">رقم القيد</span>
+                                        <span class="value">{{ $invoice->student->student_code }}</span>
+                                    </div>
+                                    @if ($invoice->student->class)
+                                        <div class="admin-detail-item">
+                                            <span class="label">الصف</span>
+                                            <span class="value">{{ $invoice->student->class->name }}</span>
+                                        </div>
                                     @endif
                                 </div>
                             </div>
+                        </div>
 
-                            <hr>
-
-                            <!-- Items -->
-                            <div class="table-responsive mb-4">
-                                <table class="table table-bordered">
-                                    <thead class="table-light">
+                        <div class="admin-table-wrap mb-4">
+                            <div class="table-responsive">
+                                <table class="admin-data-table">
+                                    <thead>
                                         <tr>
                                             <th>#</th>
                                             <th>البند</th>
                                             <th>الوصف</th>
-                                            <th class="text-center">الكمية</th>
-                                            <th class="text-end">سعر الوحدة</th>
-                                            <th class="text-end">الخصم</th>
-                                            <th class="text-end">الضريبة</th>
-                                            <th class="text-end">الإجمالي</th>
+                                            <th>الكمية</th>
+                                            <th>سعر الوحدة</th>
+                                            <th>الخصم</th>
+                                            <th>الضريبة</th>
+                                            <th>الإجمالي</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach($invoice->items as $index => $item)
+                                        @foreach ($invoice->items as $item)
                                             <tr>
                                                 <td>{{ $loop->iteration }}</td>
                                                 <td>
                                                     <strong>{{ $item->item_name }}</strong>
-                                                    @if($item->feeType)
+                                                    @if ($item->feeType)
                                                         <br><small class="text-muted">{{ $item->feeType->name }}</small>
                                                     @endif
                                                 </td>
-                                                <td>{{ $item->description ?? '-' }}</td>
-                                                <td class="text-center">{{ $item->quantity }}</td>
-                                                <td class="text-end">{{ number_format($item->unit_price, 2) }} ر.س</td>
-                                                <td class="text-end">{{ number_format($item->discount, 2) }} ر.س</td>
-                                                <td class="text-end">{{ number_format($item->tax, 2) }} ر.س</td>
-                                                <td class="text-end"><strong>{{ number_format($item->total, 2) }} ر.س</strong></td>
+                                                <td>{{ $item->description ?? '—' }}</td>
+                                                <td>{{ $item->quantity }}</td>
+                                                <td>{{ number_format($item->unit_price, 2) }} ر.س</td>
+                                                <td>{{ number_format($item->discount, 2) }} ر.س</td>
+                                                <td>{{ number_format($item->tax, 2) }} ر.س</td>
+                                                <td><strong>{{ number_format($item->total, 2) }} ر.س</strong></td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
 
-                            <!-- Totals -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    @if($invoice->notes)
-                                    <div class="mb-3">
-                                        <strong>ملاحظات:</strong>
-                                        <p class="mb-0">{{ $invoice->notes }}</p>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                @if ($invoice->notes)
+                                    <div class="admin-detail-item mb-3">
+                                        <span class="label">ملاحظات</span>
+                                        <span class="value">{{ $invoice->notes }}</span>
                                     </div>
-                                    @endif
-                                    @if($invoice->terms)
-                                    <div>
-                                        <strong>شروط الدفع:</strong>
-                                        <p class="mb-0">{{ $invoice->terms }}</p>
+                                @endif
+                                @if ($invoice->terms)
+                                    <div class="admin-detail-item">
+                                        <span class="label">شروط الدفع</span>
+                                        <span class="value">{{ $invoice->terms }}</span>
                                     </div>
+                                @endif
+                            </div>
+                            <div class="col-md-6">
+                                <div class="admin-detail-grid">
+                                    <div class="admin-detail-item">
+                                        <span class="label">المجموع الفرعي</span>
+                                        <span class="value">{{ number_format($invoice->subtotal, 2) }} ر.س</span>
+                                    </div>
+                                    @if ($invoice->discount_amount > 0)
+                                        <div class="admin-detail-item">
+                                            <span class="label">الخصم</span>
+                                            <span class="value text-danger">- {{ number_format($invoice->discount_amount, 2) }} ر.س</span>
+                                        </div>
                                     @endif
+                                    @if ($invoice->tax_amount > 0)
+                                        <div class="admin-detail-item">
+                                            <span class="label">الضريبة</span>
+                                            <span class="value">{{ number_format($invoice->tax_amount, 2) }} ر.س</span>
+                                        </div>
+                                    @endif
+                                    <div class="admin-detail-item">
+                                        <span class="label">المبلغ الإجمالي</span>
+                                        <span class="value"><strong>{{ number_format($invoice->total_amount, 2) }} ر.س</strong></span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">المدفوع</span>
+                                        <span class="value text-success">{{ number_format($invoice->paid_amount, 2) }} ر.س</span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">المتبقي</span>
+                                        <span class="value text-danger"><strong>{{ number_format($invoice->remaining_amount, 2) }} ر.س</strong></span>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+                        </div>
+
+                        @if ($invoice->payments->count() > 0)
+                            <div class="admin-detail-card mt-4">
+                                <div class="admin-detail-card-head">
+                                    <h3><i class="ri-wallet-3-line section-icon-sm"></i> سجل المدفوعات</h3>
+                                </div>
+                                <div class="admin-table-wrap">
                                     <div class="table-responsive">
-                                        <table class="table table-bordered">
-                                            <tr>
-                                                <td><strong>المجموع الفرعي:</strong></td>
-                                                <td class="text-end">{{ number_format($invoice->subtotal, 2) }} ر.س</td>
-                                            </tr>
-                                            @if($invoice->discount_amount > 0)
-                                            <tr>
-                                                <td><strong>الخصم:</strong></td>
-                                                <td class="text-end text-danger">- {{ number_format($invoice->discount_amount, 2) }} ر.س</td>
-                                            </tr>
-                                            @endif
-                                            @if($invoice->tax_amount > 0)
-                                            <tr>
-                                                <td><strong>الضريبة:</strong></td>
-                                                <td class="text-end">{{ number_format($invoice->tax_amount, 2) }} ر.س</td>
-                                            </tr>
-                                            @endif
-                                            <tr class="table-primary">
-                                                <td><strong>المبلغ الإجمالي:</strong></td>
-                                                <td class="text-end"><strong>{{ number_format($invoice->total_amount, 2) }} ر.س</strong></td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>المبلغ المدفوع:</strong></td>
-                                                <td class="text-end text-success">{{ number_format($invoice->paid_amount, 2) }} ر.س</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>المبلغ المتبقي:</strong></td>
-                                                <td class="text-end text-danger"><strong>{{ number_format($invoice->remaining_amount, 2) }} ر.س</strong></td>
-                                            </tr>
+                                        <table class="admin-data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>رقم الدفعة</th>
+                                                    <th>التاريخ</th>
+                                                    <th>المبلغ</th>
+                                                    <th>طريقة الدفع</th>
+                                                    <th>الحالة</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($invoice->payments as $payment)
+                                                    <tr>
+                                                        <td>{{ $payment->payment_number }}</td>
+                                                        <td>{{ $payment->payment_date->format('Y-m-d') }}</td>
+                                                        <td><strong>{{ number_format($payment->amount, 2) }} ر.س</strong></td>
+                                                        <td>{{ $payment->payment_method_name }}</td>
+                                                        <td>
+                                                            <span class="admin-badge {{ $payment->status == 'completed' ? 'admin-badge-success' : 'admin-badge-warning' }}">
+                                                                {{ $payment->status_name }}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
+                        @endif
 
-                            <!-- Payments -->
-                            @if($invoice->payments->count() > 0)
-                            <hr>
-                            <h5 class="mb-3">سجل المدفوعات</h5>
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>رقم الدفعة</th>
-                                            <th>التاريخ</th>
-                                            <th>المبلغ</th>
-                                            <th>طريقة الدفع</th>
-                                            <th>الحالة</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($invoice->payments as $payment)
-                                            <tr>
-                                                <td>{{ $payment->payment_number }}</td>
-                                                <td>{{ $payment->payment_date->format('Y-m-d') }}</td>
-                                                <td><strong>{{ number_format($payment->amount, 2) }} ر.س</strong></td>
-                                                <td>{{ $payment->payment_method_name }}</td>
-                                                <td>
-                                                    @if($payment->status == 'completed')
-                                                        <span class="badge bg-success">{{ $payment->status_name }}</span>
-                                                    @else
-                                                        <span class="badge bg-warning">{{ $payment->status_name }}</span>
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                            @endif
-
-                            @if($invoice->remaining_amount > 0)
+                        @if ($invoice->remaining_amount > 0)
                             <div class="mt-4 text-center">
-                                <a href="{{ route('admin.payments.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-success btn-lg">
-                                    <i class="fa-solid fa-money-bill"></i> تسجيل دفعة جديدة
+                                <a href="{{ route('admin.payments.create', ['invoice_id' => $invoice->id]) }}" class="admin-btn admin-btn-primary">
+                                    <i class="ri-money-dollar-circle-line"></i>
+                                    تسجيل دفعة جديدة
                                 </a>
                             </div>
-                            @endif
-                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
-    <!-- End::app-content -->
 @stop
 
 @push('styles')
 <style>
 @media print {
-    .page-header-breadcrumb, .btn, nav, aside {
+    .admin-page-header, .admin-btn, nav, aside {
         display: none !important;
     }
     #invoiceCard {

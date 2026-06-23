@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\ExamAnswer;
 use App\Models\Exam;
@@ -10,6 +11,15 @@ use Illuminate\Http\Request;
 
 class ExamAnswerController extends Controller
 {
+    use AuthorizesAdminResource;
+
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->authorizeAdminResource('exam-answer', true, ['exam-answer-auto-grade' => ['autoGrade']]);
+    }
+
     /**
      * Display a listing of the resource.
      */

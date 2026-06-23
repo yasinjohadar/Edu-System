@@ -28,7 +28,7 @@ class Certificate extends Model
 
     public function template(): BelongsTo
     {
-        return $this->belongsTo(CertificateTemplate::class);
+        return $this->belongsTo(CertificateTemplate::class, 'template_id');
     }
 
     public function student(): BelongsTo

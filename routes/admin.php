@@ -79,7 +79,7 @@ Route::middleware(['auth', 'check.user.active'])->prefix('admin')->name('admin.'
     Route::resource('grade-records', GradeRecordController::class);
     
     // النظام المالي
-    Route::resource('fee-types', FeeTypeController::class);
+    Route::resource('fee-types', FeeTypeController::class)->except(['show']);
     Route::resource('invoices', InvoiceController::class);
     Route::get('invoices-json', [InvoiceController::class, 'getInvoicesJson'])->name('invoices.json');
     Route::resource('payments', PaymentController::class);
@@ -200,7 +200,7 @@ Route::middleware(['auth', 'check.user.active'])->prefix('admin')->name('admin.'
     Route::resource('visitors', VisitorController::class);
     
     // نظام الخريجين
-    Route::resource('alumni', AlumniController::class);
+    Route::resource('alumni', AlumniController::class)->parameters(['alumni' => 'alumni']);
     Route::resource('alumni-events', AlumniEventController::class);
     Route::resource('job-postings', JobPostingController::class);
     Route::resource('alumni-donations', AlumniDonationController::class);

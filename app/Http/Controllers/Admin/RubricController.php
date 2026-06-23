@@ -2,12 +2,22 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Rubric;
 use Illuminate\Http\Request;
 
 class RubricController extends Controller
 {
+    use AuthorizesAdminResource;
+
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->authorizeAdminResource('rubric');
+    }
+
     /**
      * Display a listing of the resource.
      */

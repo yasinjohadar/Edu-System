@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Student;
 use App\Models\User;
@@ -16,9 +17,12 @@ use Illuminate\Support\Facades\Storage;
 
 class StudentController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('student');
     }
 
     /**
@@ -26,39 +30,52 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
-        $studentsQuery = Student::with('user', 'class.grade', 'section', 'parents.user')
-            ->orderBy('created_at', 'desc');
+        $students = $this->buildStudentsQuery($request)->paginate(10)->withQueryString();
+        $classes = ClassModel::with('grade')->where('is_active', true)->get();
+        $sections = Section::with('class.grade')->where('is_active', true)->get();
 
-        // البحث
-        if ($request->filled('query')) {
-            $search = $request->input('query');
-            $studentsQuery->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%")
-                  ->orWhere('phone', 'like', "%$search%");
-            })->orWhere('student_code', 'like', "%$search%");
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.students-table-body', compact('students'))->render(),
+                'extra' => view('admin.partials.students-table-footer', compact('students'))->render(),
+                'from' => $students->firstItem(),
+                'to' => $students->lastItem(),
+                'total' => $students->total(),
+            ]);
         }
 
-        // فلترة حسب الحالة
+        return view('admin.pages.students.index', compact('students', 'classes', 'sections'));
+    }
+
+    private function buildStudentsQuery(Request $request)
+    {
+        $studentsQuery = Student::with(['user', 'class.grade', 'section', 'parents.user'])
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('query')) {
+            $search = $request->input('query');
+            $studentsQuery->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($uq) use ($search) {
+                    $uq->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })->orWhere('student_code', 'like', "%{$search}%");
+            });
+        }
+
         if ($request->filled('status')) {
             $studentsQuery->where('status', $request->input('status'));
         }
 
-        // فلترة حسب الصف
         if ($request->filled('class_id')) {
             $studentsQuery->where('class_id', $request->input('class_id'));
         }
 
-        // فلترة حسب الفصل
         if ($request->filled('section_id')) {
             $studentsQuery->where('section_id', $request->input('section_id'));
         }
 
-        $students = $studentsQuery->paginate(15);
-        $classes = ClassModel::with('grade')->where('is_active', true)->get();
-        $sections = Section::with('class.grade')->where('is_active', true)->get();
-
-        return view('admin.pages.students.index', compact('students', 'classes', 'sections'));
+        return $studentsQuery;
     }
 
     /**

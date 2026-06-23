@@ -6,111 +6,110 @@
 
 @section('content')
     @if (\Session::has('success'))
-        <div class="alert alert-success">
-            <ul>
-                <li>{!! \Session::get('success') !!}</li>
-            </ul>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {!! \Session::get('success') !!}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-    <!-- Start::app-content -->
+    @if (\Session::has('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {!! \Session::get('error') !!}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <div class="main-content app-content">
         <div class="container-fluid">
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1">كافة الفصول الدراسية</h5>
+
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>كافة الفصول الدراسية</h1>
+                    <p>إدارة الفصول والسعة والمعلمين الرئيسيين</p>
+                </div>
+                <a href="{{ route('admin.sections.create') }}" class="admin-btn admin-btn-primary">
+                    <i class="ri-add-line"></i>
+                    إضافة فصل جديد
+                </a>
+            </div>
+
+            <div class="admin-page-card">
+                <div class="card-toolbar">
+                    <form id="sections-filter-form" action="{{ route('admin.sections.index') }}" method="GET" class="admin-filters w-100">
+                        <div class="search-input-wrap">
+                            <i class="ri-search-line"></i>
+                            <input type="text" name="query" class="form-control"
+                                   placeholder="بحث بالاسم..."
+                                   value="{{ request('query') }}" autocomplete="off">
+                        </div>
+
+                        <select name="class_id" class="form-select" data-admin-choices style="width: auto; min-width: 180px;">
+                            <option value="">كل الصفوف</option>
+                            @foreach ($classes as $class)
+                                <option value="{{ $class->id }}" {{ request('class_id') == $class->id ? 'selected' : '' }}>{{ $class->grade->name }} — {{ $class->name }}</option>
+                            @endforeach
+                        </select>
+
+                        <select name="is_active" class="form-select" style="width: auto; min-width: 150px;">
+                            <option value="">كل الحالات</option>
+                            <option value="1" {{ request('is_active') === '1' ? 'selected' : '' }}>نشط</option>
+                            <option value="0" {{ request('is_active') === '0' ? 'selected' : '' }}>غير نشط</option>
+                        </select>
+
+                        <button type="button" class="admin-btn admin-btn-danger" data-admin-filter-reset>
+                            <i class="ri-refresh-line"></i>
+                            مسح
+                        </button>
+                    </form>
+                </div>
+
+                <div class="admin-table-wrap" id="sections-table-wrap">
+                    <div class="table-loader">
+                        <div class="spinner-border text-primary" role="status"></div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="admin-data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>اسم الفصل</th>
+                                    <th>الصف</th>
+                                    <th>السعة</th>
+                                    <th>الطلاب الحاليون</th>
+                                    <th>المعلم الرئيسي</th>
+                                    <th>الحالة</th>
+                                    <th>العمليات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sections-table-body">
+                                @include('admin.partials.sections-table-body')
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="sections-ajax-extra">
+                    @include('admin.partials.sections-table-footer')
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="card">
-                        <div class="card-header align-items-center d-flex gap-3">
-                            <a href="{{ route('admin.sections.create') }}" class="btn btn-primary btn-sm">إضافة فصل جديد</a>
-                            <div class="flex-shrink-0">
-                                <form action="{{ route('admin.sections.index') }}" method="GET" class="d-flex align-items-center gap-2">
-                                    <input style="width: 300px" type="text" name="query" class="form-control" placeholder="بحث بالاسم" value="{{ request('query') }}">
-                                    <select name="class_id" class="form-select">
-                                        <option value="">كل الصفوف</option>
-                                        @foreach($classes as $class)
-                                            <option value="{{ $class->id }}" {{ request('class_id') == $class->id ? 'selected' : '' }}>{{ $class->grade->name }} - {{ $class->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button type="submit" class="btn btn-secondary">بحث</button>
-                                    <a href="{{ route('admin.sections.index') }}" class="btn btn-danger">مسح</a>
-                                </form>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover align-middle table-nowrap mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>اسم الفصل</th>
-                                            <th>الصف</th>
-                                            <th>السعة</th>
-                                            <th>الطلاب الحاليون</th>
-                                            <th>المعلم الرئيسي</th>
-                                            <th>الحالة</th>
-                                            <th>العمليات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($sections as $section)
-                                            <tr>
-                                                <td>{{ $section->id }}</td>
-                                                <td>{{ $section->name }}</td>
-                                                <td>{{ $section->class->grade->name }} - {{ $section->class->name }}</td>
-                                                <td>{{ $section->capacity }}</td>
-                                                <td>{{ $section->current_students }}</td>
-                                                <td>{{ $section->classTeacher->name ?? '-' }}</td>
-                                                <td>
-                                                    @if($section->is_active)
-                                                        <span class="badge bg-success">نشط</span>
-                                                    @else
-                                                        <span class="badge bg-danger">غير نشط</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex gap-2">
-                                                        <a href="{{ route('admin.sections.edit', $section->id) }}" class="btn btn-sm btn-info">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px; vertical-align: middle;">
-                                                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                                            </svg>
-                                                            تعديل
-                                                        </a>
-                                                        <button type="button" class="btn btn-sm btn-danger" 
-                                                                data-delete-url="{{ route('admin.sections.destroy', $section->id) }}"
-                                                                data-delete-message="هل أنت متأكد من رغبتك في حذف الفصل <strong>{{ $section->name }}</strong>؟">
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 4px; vertical-align: middle;">
-                                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                            </svg>
-                                                            حذف
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="8" class="text-center">لا توجد فصول</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="mt-3">
-                                {{ $sections->links() }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
-    
+
     @include('admin.components.delete-modal')
 @stop
 
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        AdminTables.initAjaxTable({
+            formSelector: '#sections-filter-form',
+            bodySelector: '#sections-table-body',
+            extraSelector: '#sections-ajax-extra',
+            tableWrapSelector: '#sections-table-wrap',
+            metaSelector: '#sections-table-meta',
+            url: '{{ route('admin.sections.index') }}',
+        });
+    });
+</script>
+@endpush

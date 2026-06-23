@@ -11,8 +11,14 @@ use App\Models\Attendance;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\GradeRecord;
+use App\Models\Certificate;
+use App\Models\Subject;
+use App\Models\Exam;
+use App\Models\Assignment;
 use App\Models\FinancialAccount;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -20,6 +26,7 @@ class DashboardController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permission:dashboard-view');
     }
 
     /**
@@ -170,6 +177,130 @@ class DashboardController extends Controller
             ];
         }
 
+        // إحصائيات المدفوعات لهذا الشهر (آخر 7 أيام)
+        $last7Days = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::now()->subDays($i);
+            $last7Days[] = [
+                'date' => $date->format('Y-m-d'),
+                'label' => $date->format('d/m'),
+                'amount' => Payment::whereDate('payment_date', $date)
+                    ->where('status', 'completed')
+                    ->sum('amount'),
+            ];
+        }
+
+        $totalSubjects = Subject::count();
+        $activeSubjects = Subject::where('is_active', true)->count();
+        $certificatesToday = Certificate::whereDate('issue_date', $today)->count();
+
+        $dashboardWidgets = [
+            [
+                'title' => 'إجمالي الطلاب',
+                'value' => $studentsStats['total'],
+                'subtext' => $studentsStats['active'] . ' نشط · ' . $studentsStats['new_this_month'] . ' جديد هذا الشهر',
+                'icon' => 'ri-group-line',
+                'theme' => 'purple',
+                'route' => 'admin.students.index',
+            ],
+            [
+                'title' => 'الالتحاقات النشطة',
+                'value' => $studentsStats['active'],
+                'subtext' => 'إجمالي ' . number_format($studentsStats['total']) . ' التحاق',
+                'icon' => 'ri-user-add-line',
+                'theme' => 'green',
+                'route' => 'admin.students.index',
+            ],
+            [
+                'title' => 'المواد النشطة',
+                'value' => $activeSubjects,
+                'subtext' => 'من أصل ' . $totalSubjects . ' مادة',
+                'icon' => 'ri-book-open-line',
+                'theme' => 'blue',
+                'route' => 'admin.subjects.index',
+            ],
+            [
+                'title' => 'الشهادات الصادرة',
+                'value' => Certificate::count(),
+                'subtext' => $certificatesToday . ' اليوم',
+                'icon' => 'ri-award-line',
+                'theme' => 'orange',
+                'route' => 'admin.certificates.index',
+            ],
+        ];
+
+        $enrollmentChart = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = Carbon::now()->subMonths($i);
+            $enrollmentChart[] = [
+                'label' => $month->translatedFormat('M'),
+                'count' => Student::whereMonth('enrollment_date', $month->month)
+                    ->whereYear('enrollment_date', $month->year)
+                    ->count(),
+            ];
+        }
+
+        $todaySummary = [
+            [
+                'label' => 'حضور اليوم',
+                'value' => $attendanceStats['today_present'],
+                'icon' => 'ri-user-follow-line',
+                'color' => 'green',
+            ],
+            [
+                'label' => 'غياب اليوم',
+                'value' => $attendanceStats['today_absent'],
+                'icon' => 'ri-user-unfollow-line',
+                'color' => 'red',
+            ],
+            [
+                'label' => 'مدفوعات اليوم',
+                'value' => number_format(
+                    Payment::whereDate('payment_date', $today)->where('status', 'completed')->sum('amount'),
+                    0
+                ) . ' ر.س',
+                'icon' => 'ri-wallet-3-line',
+                'color' => 'blue',
+            ],
+            [
+                'label' => 'فواتير جديدة',
+                'value' => Invoice::whereDate('created_at', $today)->count(),
+                'icon' => 'ri-file-list-3-line',
+                'color' => 'orange',
+            ],
+            [
+                'label' => 'اختبارات نشطة',
+                'value' => Exam::where('is_published', true)->where('is_active', true)->count(),
+                'icon' => 'ri-survey-line',
+                'color' => 'purple',
+            ],
+            [
+                'label' => 'واجبات مفتوحة',
+                'value' => Assignment::where('status', 'published')->where('is_active', true)->count(),
+                'icon' => 'ri-file-text-line',
+                'color' => 'teal',
+            ],
+        ];
+
+        $quickShortcuts = array_values(array_filter([
+            ['title' => 'الواجبات', 'desc' => 'إدارة الواجبات', 'route' => 'admin.assignments.index', 'icon' => 'ri-file-text-line', 'color' => 'orange'],
+            ['title' => 'الاختبارات', 'desc' => 'إدارة الاختبارات', 'route' => 'admin.exams.index', 'icon' => 'ri-survey-line', 'color' => 'pink'],
+            ['title' => 'الشهادات', 'desc' => 'إصدار الشهادات', 'route' => 'admin.certificates.index', 'icon' => 'ri-award-line', 'color' => 'gold'],
+            ['title' => 'الطلاب', 'desc' => 'إدارة الطلاب', 'route' => 'admin.students.index', 'icon' => 'ri-graduation-cap-line', 'color' => 'orange'],
+            ['title' => 'المواد الدراسية', 'desc' => 'إدارة المواد', 'route' => 'admin.subjects.index', 'icon' => 'ri-book-open-line', 'color' => 'blue'],
+            ['title' => 'المستخدمون', 'desc' => 'إدارة المستخدمين', 'route' => 'users.index', 'icon' => 'ri-group-line', 'color' => 'teal'],
+            ['title' => 'الصلاحيات', 'desc' => 'إدارة الصلاحيات', 'route' => 'roles.index', 'icon' => 'ri-shield-keyhole-line', 'color' => 'pink'],
+            ['title' => 'الحضور', 'desc' => 'سجل الحضور', 'route' => 'admin.attendances.index', 'icon' => 'ri-calendar-check-line', 'color' => 'green'],
+            ['title' => 'المدفوعات', 'desc' => 'إدارة المدفوعات', 'route' => 'admin.payments.index', 'icon' => 'ri-wallet-3-line', 'color' => 'green'],
+            ['title' => 'الفواتير', 'desc' => 'إدارة الفواتير', 'route' => 'admin.invoices.index', 'icon' => 'ri-file-list-3-line', 'color' => 'blue'],
+            ['title' => 'بنك الأسئلة', 'desc' => 'إدارة الأسئلة', 'route' => 'admin.questions.index', 'icon' => 'ri-questionnaire-line', 'color' => 'purple'],
+            ['title' => 'التقارير', 'desc' => 'عرض التقارير', 'route' => 'admin.reports.index', 'icon' => 'ri-file-chart-line', 'color' => 'indigo'],
+            ['title' => 'المحاضرات', 'desc' => 'المحاضرات الإلكترونية', 'route' => 'admin.online-lectures.index', 'icon' => 'ri-live-line', 'color' => 'purple'],
+            ['title' => 'المكتبة', 'desc' => 'إدارة الكتب', 'route' => 'admin.books.index', 'icon' => 'ri-book-2-line', 'color' => 'brown'],
+            ['title' => 'المعلمون', 'desc' => 'إدارة المعلمين', 'route' => 'admin.teachers.index', 'icon' => 'ri-user-star-line', 'color' => 'cyan'],
+            ['title' => 'الأحداث', 'desc' => 'التقويم والأحداث', 'route' => 'admin.events.index', 'icon' => 'ri-calendar-event-line', 'color' => 'red'],
+        ], fn ($item) => Route::has($item['route'])));
+
         return view('admin.dashboard', compact(
             'studentsStats',
             'teachersStats',
@@ -183,7 +314,11 @@ class DashboardController extends Controller
             'overdueInvoices',
             'mostAbsentStudents',
             'classStats',
-            'last7Days'
+            'last7Days',
+            'dashboardWidgets',
+            'enrollmentChart',
+            'todaySummary',
+            'quickShortcuts'
         ));
     }
 }

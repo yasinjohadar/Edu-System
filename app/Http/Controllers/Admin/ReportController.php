@@ -31,6 +31,18 @@ class ReportController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permission:report-list', ['only' => ['index']]);
+        $this->middleware('permission:report-create', ['only' => ['create']]);
+        $this->middleware('permission:report-student-performance', ['only' => ['studentPerformance']]);
+        $this->middleware('permission:report-class-performance', ['only' => ['classPerformance']]);
+        $this->middleware('permission:report-teacher-performance', ['only' => ['teacherPerformance']]);
+        $this->middleware('permission:report-attendance', ['only' => ['attendance']]);
+        $this->middleware('permission:report-financial', ['only' => ['financial']]);
+        $this->middleware('permission:report-library', ['only' => ['library']]);
+        $this->middleware('permission:report-exams', ['only' => ['exams']]);
+        $this->middleware('permission:report-assignments', ['only' => ['assignments']]);
+        $this->middleware('permission:report-grades', ['only' => ['grades']]);
+        $this->middleware('permission:report-export', ['only' => ['export']]);
     }
 
     /**

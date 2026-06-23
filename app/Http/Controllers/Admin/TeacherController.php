@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Teacher;
 use App\Models\User;
@@ -12,22 +13,45 @@ use Illuminate\Support\Facades\Hash;
 
 class TeacherController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('teacher');
     }
 
     public function index(Request $request)
     {
-        $teachersQuery = Teacher::with('user')->orderBy('created_at', 'desc');
+        $teachers = $this->buildTeachersQuery($request)->paginate(10)->withQueryString();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.teachers-table-body', compact('teachers'))->render(),
+                'extra' => view('admin.partials.teachers-table-footer', compact('teachers'))->render(),
+                'from' => $teachers->firstItem(),
+                'to' => $teachers->lastItem(),
+                'total' => $teachers->total(),
+            ]);
+        }
+
+        return view('admin.pages.teachers.index', compact('teachers'));
+    }
+
+    private function buildTeachersQuery(Request $request)
+    {
+        $teachersQuery = Teacher::with(['user', 'subjects'])->orderBy('created_at', 'desc');
 
         if ($request->filled('query')) {
             $search = $request->input('query');
-            $teachersQuery->whereHas('user', function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('email', 'like', "%$search%")
-                  ->orWhere('phone', 'like', "%$search%");
-            })->orWhere('teacher_code', 'like', "%$search%");
+            $teachersQuery->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($uq) use ($search) {
+                    $uq->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%");
+                })->orWhere('teacher_code', 'like', "%{$search}%")
+                    ->orWhere('specialization', 'like', "%{$search}%");
+            });
         }
 
         if ($request->filled('status')) {
@@ -38,10 +62,7 @@ class TeacherController extends Controller
             $teachersQuery->where('specialization', 'like', "%{$request->input('specialization')}%");
         }
 
-        $teachers = $teachersQuery->paginate(10);
-        $subjects = Subject::where('is_active', true)->get();
-
-        return view('admin.pages.teachers.index', compact('teachers', 'subjects'));
+        return $teachersQuery;
     }
 
     public function create()

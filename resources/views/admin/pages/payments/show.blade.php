@@ -5,122 +5,148 @@
 @stop
 
 @section('content')
-    <!-- Start::app-content -->
+    @php
+        $statusClasses = [
+            'completed' => 'admin-badge-success',
+            'pending' => 'admin-badge-warning',
+            'failed' => 'admin-badge-danger',
+            'refunded' => 'admin-badge-muted',
+        ];
+    @endphp
+
     <div class="main-content app-content">
         <div class="container-fluid">
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1">تفاصيل الدفعة</h5>
+
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>تفاصيل الدفعة</h1>
+                    <p>{{ $payment->payment_number }} — {{ $payment->student->user->name ?? 'غير محدد' }}</p>
                 </div>
-                <div>
-                    <a href="{{ route('admin.payments.index') }}" class="btn btn-secondary">
-                        <i class="fa-solid fa-arrow-right"></i> العودة للقائمة
-                    </a>
+                <div class="admin-page-header-actions">
                     @can('payment-edit')
-                    @if($payment->status != 'refunded')
-                    <a href="{{ route('admin.payments.edit', $payment->id) }}" class="btn btn-warning">
-                        <i class="fa-solid fa-edit"></i> تعديل
-                    </a>
-                    @endif
+                        @if ($payment->status != 'refunded')
+                            <a href="{{ route('admin.payments.edit', $payment->id) }}" class="admin-btn admin-btn-primary">
+                                <i class="ri-edit-line"></i>
+                                تعديل
+                            </a>
+                        @endif
                     @endcan
-                    <button onclick="window.print()" class="btn btn-primary">
-                        <i class="fa-solid fa-print"></i> طباعة
+                    <button type="button" onclick="window.print()" class="admin-btn admin-btn-secondary">
+                        <i class="ri-printer-line"></i>
+                        طباعة
                     </button>
+                    <a href="{{ route('admin.payments.index') }}" class="admin-btn admin-btn-secondary">
+                        <i class="ri-arrow-right-line"></i>
+                        العودة
+                    </a>
                 </div>
             </div>
 
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="card" id="paymentCard">
-                        <div class="card-body">
-                            <div class="row mb-4">
-                                <div class="col-md-6">
-                                    <h4 class="mb-3">إيصال دفع</h4>
-                                    <p class="mb-1"><strong>رقم الدفعة:</strong> {{ $payment->payment_number }}</p>
-                                    <p class="mb-1"><strong>تاريخ الدفع:</strong> {{ $payment->payment_date->format('Y-m-d') }}</p>
-                                    <p class="mb-1"><strong>المبلغ:</strong> <span class="text-success"><strong>{{ number_format($payment->amount, 2) }} ر.س</strong></span></p>
-                                    <p class="mb-0">
-                                        <strong>الحالة:</strong> 
-                                        @if($payment->status == 'completed')
-                                            <span class="badge bg-success">{{ $payment->status_name }}</span>
-                                        @elseif($payment->status == 'pending')
-                                            <span class="badge bg-warning">{{ $payment->status_name }}</span>
-                                        @else
-                                            <span class="badge bg-danger">{{ $payment->status_name }}</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                <div class="col-md-6 text-end">
-                                    <h5>معلومات الطالب</h5>
-                                    <p class="mb-1"><strong>الاسم:</strong> {{ $payment->student->user->name ?? 'غير محدد' }}</p>
-                                    <p class="mb-1"><strong>رقم القيد:</strong> {{ $payment->student->student_code }}</p>
-                                    @if($payment->invoice)
-                                    <p class="mb-0">
-                                        <strong>الفاتورة:</strong> 
-                                        <a href="{{ route('admin.invoices.show', $payment->invoice->id) }}">
-                                            {{ $payment->invoice->invoice_number }}
-                                        </a>
-                                    </p>
-                                    @endif
+            <div class="admin-page-card" id="paymentCard">
+                <div class="admin-detail-card">
+                    <div class="admin-detail-card-head">
+                        <h3><i class="ri-wallet-3-line section-icon-sm"></i> إيصال الدفع</h3>
+                        <span class="admin-badge {{ $statusClasses[$payment->status] ?? 'admin-badge-muted' }}">{{ $payment->status_name }}</span>
+                    </div>
+                    <div class="admin-detail-card-body">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="admin-detail-grid">
+                                    <div class="admin-detail-item">
+                                        <span class="label">رقم الدفعة</span>
+                                        <span class="value">{{ $payment->payment_number }}</span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">تاريخ الدفع</span>
+                                        <span class="value">{{ $payment->payment_date->format('Y-m-d') }}</span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">المبلغ</span>
+                                        <span class="value text-success"><strong>{{ number_format($payment->amount, 2) }} ر.س</strong></span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">طريقة الدفع</span>
+                                        <span class="value">{{ $payment->payment_method_name }}</span>
+                                    </div>
                                 </div>
                             </div>
-
-                            <hr>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6>تفاصيل الدفع</h6>
-                                    <table class="table table-bordered">
-                                        <tr>
-                                            <td><strong>طريقة الدفع:</strong></td>
-                                            <td>{{ $payment->payment_method_name }}</td>
-                                        </tr>
-                                        @if($payment->reference_number)
-                                        <tr>
-                                            <td><strong>رقم المرجع:</strong></td>
-                                            <td>{{ $payment->reference_number }}</td>
-                                        </tr>
-                                        @endif
-                                        @if($payment->bank_name)
-                                        <tr>
-                                            <td><strong>اسم البنك:</strong></td>
-                                            <td>{{ $payment->bank_name }}</td>
-                                        </tr>
-                                        @endif
-                                        @if($payment->receiver)
-                                        <tr>
-                                            <td><strong>استلم بواسطة:</strong></td>
-                                            <td>{{ $payment->receiver->name }}</td>
-                                        </tr>
-                                        @endif
-                                        @if($payment->processed_at)
-                                        <tr>
-                                            <td><strong>تاريخ المعالجة:</strong></td>
-                                            <td>{{ $payment->processed_at->format('Y-m-d H:i') }}</td>
-                                        </tr>
-                                        @endif
-                                    </table>
-                                </div>
-                                <div class="col-md-6">
-                                    @if($payment->notes)
-                                    <h6>ملاحظات</h6>
-                                    <p>{{ $payment->notes }}</p>
+                            <div class="col-md-6">
+                                <div class="admin-detail-grid">
+                                    <div class="admin-detail-item">
+                                        <span class="label">الطالب</span>
+                                        <span class="value">{{ $payment->student->user->name ?? 'غير محدد' }}</span>
+                                    </div>
+                                    <div class="admin-detail-item">
+                                        <span class="label">رقم القيد</span>
+                                        <span class="value">{{ $payment->student->student_code }}</span>
+                                    </div>
+                                    @if ($payment->invoice)
+                                        <div class="admin-detail-item">
+                                            <span class="label">الفاتورة</span>
+                                            <span class="value">
+                                                <a href="{{ route('admin.invoices.show', $payment->invoice->id) }}" class="admin-user-link">
+                                                    {{ $payment->invoice->invoice_number }}
+                                                </a>
+                                            </span>
+                                        </div>
+                                    @endif
+                                    @if ($payment->receiver)
+                                        <div class="admin-detail-item">
+                                            <span class="label">استلم بواسطة</span>
+                                            <span class="value">{{ $payment->receiver->name }}</span>
+                                        </div>
+                                    @endif
+                                    @if ($payment->processed_at)
+                                        <div class="admin-detail-item">
+                                            <span class="label">تاريخ المعالجة</span>
+                                            <span class="value">{{ $payment->processed_at->format('Y-m-d H:i') }}</span>
+                                        </div>
                                     @endif
                                 </div>
                             </div>
                         </div>
+
+                        @if ($payment->reference_number || $payment->bank_name || $payment->notes)
+                            <div class="admin-detail-card mt-4">
+                                <div class="admin-detail-card-head">
+                                    <h3><i class="ri-information-line section-icon-sm"></i> معلومات إضافية</h3>
+                                </div>
+                                <div class="admin-detail-card-body">
+                                    <div class="admin-detail-grid">
+                                        @if ($payment->reference_number)
+                                            <div class="admin-detail-item">
+                                                <span class="label">رقم المرجع</span>
+                                                <span class="value">{{ $payment->reference_number }}</span>
+                                            </div>
+                                        @endif
+                                        @if ($payment->bank_name)
+                                            <div class="admin-detail-item">
+                                                <span class="label">اسم البنك</span>
+                                                <span class="value">{{ $payment->bank_name }}</span>
+                                            </div>
+                                        @endif
+                                        @if ($payment->notes)
+                                            <div class="admin-detail-item">
+                                                <span class="label">ملاحظات</span>
+                                                <span class="value">{{ $payment->notes }}</span>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
-    <!-- End::app-content -->
 @stop
 
 @push('styles')
 <style>
 @media print {
-    .page-header-breadcrumb, .btn, nav, aside {
+    .admin-page-header, .admin-btn, nav, aside {
         display: none !important;
     }
     #paymentCard {
@@ -130,4 +156,3 @@
 }
 </style>
 @endpush
-

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Fine;
 use App\Models\BookBorrowing;
@@ -11,13 +12,12 @@ use Carbon\Carbon;
 
 class FineController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:fine-list')->only('index', 'show');
-        $this->middleware('permission:fine-create')->only('create', 'store');
-        $this->middleware('permission:fine-edit')->only('edit', 'update', 'pay');
-        $this->middleware('permission:fine-delete')->only('destroy');
+        $this->authorizeAdminResource('fine', true, ['fine-pay' => ['pay']]);
     }
 
     public function index(Request $request)

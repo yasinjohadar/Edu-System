@@ -5,99 +5,214 @@
 @stop
 
 @section('content')
-    <!-- Start::app-content -->
+    @if ($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li class="small">{{ $error }}</li>
+                @endforeach
+            </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <div class="main-content app-content">
         <div class="container-fluid">
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1">تعديل المادة</h5>
+
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>تعديل المادة: {{ $subject->name }}</h1>
+                    <p>تحديث بيانات المادة الدراسية</p>
                 </div>
+                <a href="{{ route('admin.subjects.index') }}" class="admin-btn admin-btn-secondary">
+                    <i class="ri-arrow-right-line"></i>
+                    العودة للقائمة
+                </a>
             </div>
 
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="card-title">بيانات المادة</h4>
+            <div class="admin-page-card">
+                <form action="{{ route('admin.subjects.update', $subject->id) }}" method="POST" class="admin-form" id="subject-edit-form">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="admin-form-body">
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-blue">
+                                    <i class="ri-book-open-line"></i>
+                                </div>
+                                <div>
+                                    <h3>بيانات المادة</h3>
+                                    <p>الاسم والرمز والنوع</p>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">اسم المادة <span class="required">*</span></label>
+                                        <input type="text" class="form-control @error('name') is-invalid @enderror"
+                                               name="name" value="{{ old('name', $subject->name) }}" required>
+                                        @error('name')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">الاسم بالإنجليزية</label>
+                                        <input type="text" class="form-control @error('name_en') is-invalid @enderror"
+                                               name="name_en" value="{{ old('name_en', $subject->name_en) }}">
+                                        @error('name_en')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">رمز المادة</label>
+                                        <input type="text" class="form-control @error('code') is-invalid @enderror"
+                                               name="code" value="{{ old('code', $subject->code) }}">
+                                        @error('code')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">نوع المادة <span class="required">*</span></label>
+                                        <select class="form-select @error('type') is-invalid @enderror"
+                                                name="type" data-admin-choices required>
+                                            <option value="required" {{ old('type', $subject->type) === 'required' ? 'selected' : '' }}>إجباري</option>
+                                            <option value="optional" {{ old('type', $subject->type) === 'optional' ? 'selected' : '' }}>اختياري</option>
+                                        </select>
+                                        @error('type')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">عدد الحصص الأسبوعية</label>
+                                        <input type="number" class="form-control @error('weekly_hours') is-invalid @enderror"
+                                               name="weekly_hours" value="{{ old('weekly_hours', $subject->weekly_hours) }}" min="0">
+                                        @error('weekly_hours')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">الوصف</label>
+                                        <textarea class="form-control @error('description') is-invalid @enderror"
+                                                  name="description" rows="3">{{ old('description', $subject->description) }}</textarea>
+                                        @error('description')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <form action="{{ route('admin.subjects.update', $subject->id) }}" method="POST">
-                                @csrf
-                                @method('PUT')
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">اسم المادة <span class="text-danger">*</span></label>
-                                            <input type="text" class="form-control" name="name" value="{{ old('name', $subject->name) }}" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">رمز المادة</label>
-                                            <input type="text" class="form-control" name="code" value="{{ old('code', $subject->code) }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">نوع المادة <span class="text-danger">*</span></label>
-                                            <select class="form-control" name="type" required>
-                                                <option value="required" {{ old('type', $subject->type) == 'required' ? 'selected' : '' }}>إجباري</option>
-                                                <option value="optional" {{ old('type', $subject->type) == 'optional' ? 'selected' : '' }}>اختياري</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">عدد الحصص الأسبوعية</label>
-                                            <input type="number" class="form-control" name="weekly_hours" value="{{ old('weekly_hours', $subject->weekly_hours) }}" min="0">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">الدرجة الكاملة</label>
-                                            <input type="number" step="0.01" class="form-control" name="full_marks" value="{{ old('full_marks', $subject->full_marks) }}" min="0">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">درجة النجاح</label>
-                                            <input type="number" step="0.01" class="form-control" name="pass_marks" value="{{ old('pass_marks', $subject->pass_marks) }}" min="0">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label class="form-label">الصفوف المرتبطة</label>
-                                            <select class="form-control" name="classes[]" multiple>
-                                                @foreach($classes as $class)
-                                                    <option value="{{ $class->id }}" {{ in_array($class->id, old('classes', $subject->classes->pluck('id')->toArray())) ? 'selected' : '' }}>{{ $class->grade->name }} - {{ $class->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-muted">اضغط Ctrl للاختيار المتعدد</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <div class="mb-3">
-                                            <label class="form-label">الوصف</label>
-                                            <textarea class="form-control" name="description" rows="3">{{ old('description', $subject->description) }}</textarea>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-12">
-                                        <div class="form-check form-switch mb-3">
-                                            <input class="form-check-input" type="checkbox" name="is_active" value="1" id="is_active" {{ old('is_active', $subject->is_active) ? 'checked' : '' }}>
-                                            <label class="form-check-label" for="is_active">نشط</label>
-                                        </div>
+
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-green">
+                                    <i class="ri-bar-chart-line"></i>
+                                </div>
+                                <div>
+                                    <h3>الدرجات</h3>
+                                    <p>الدرجة الكاملة ودرجة النجاح</p>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">الدرجة الكاملة</label>
+                                        <input type="number" step="0.01" class="form-control @error('full_marks') is-invalid @enderror"
+                                               name="full_marks" value="{{ old('full_marks', $subject->full_marks) }}" min="0">
+                                        @error('full_marks')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <button type="submit" class="btn btn-primary">تحديث</button>
-                                    <a href="{{ route('admin.subjects.index') }}" class="btn btn-secondary">إلغاء</a>
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">درجة النجاح</label>
+                                        <input type="number" step="0.01" class="form-control @error('pass_marks') is-invalid @enderror"
+                                               name="pass_marks" value="{{ old('pass_marks', $subject->pass_marks) }}" min="0">
+                                        @error('pass_marks')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
                                 </div>
-                            </form>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-purple">
+                                    <i class="ri-book-2-line"></i>
+                                </div>
+                                <div>
+                                    <h3>الصفوف المرتبطة</h3>
+                                    <p>حدد الصفوف التي تُدرَّس فيها هذه المادة</p>
+                                </div>
+                            </div>
+
+                            @php
+                                $selectedClasses = old('classes', $subject->classes->pluck('id')->toArray());
+                            @endphp
+
+                            <div class="admin-role-grid">
+                                @foreach ($classes as $class)
+                                    <label class="admin-role-chip">
+                                        <input type="checkbox" name="classes[]" value="{{ $class->id }}"
+                                               {{ in_array($class->id, $selectedClasses) ? 'checked' : '' }}>
+                                        <span>
+                                            <i class="ri-book-2-line"></i>
+                                            {{ $class->grade->name }} — {{ $class->name }}
+                                        </span>
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('classes')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
+                            @error('classes.*')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-amber">
+                                    <i class="ri-toggle-line"></i>
+                                </div>
+                                <div>
+                                    <h3>الحالة</h3>
+                                    <p>تفعيل أو إيقاف المادة</p>
+                                </div>
+                            </div>
+
+                            <div class="admin-form-switch-card">
+                                <div class="switch-info">
+                                    <strong>مادة نشطة</strong>
+                                    <span>إظهار المادة في النظام والجداول</span>
+                                </div>
+                                <input class="form-check-input" type="checkbox" name="is_active" value="1"
+                                       id="is_active" {{ old('is_active', $subject->is_active) ? 'checked' : '' }}>
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="admin-form-footer">
+                        <a href="{{ route('admin.subjects.index') }}" class="admin-btn admin-btn-secondary">
+                            <i class="ri-close-line"></i>
+                            إلغاء
+                        </a>
+                        <button type="submit" class="admin-btn admin-btn-primary">
+                            <i class="ri-save-line"></i>
+                            حفظ التعديلات
+                        </button>
+                    </div>
+                </form>
             </div>
+
         </div>
     </div>
 @stop
 
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (window.AdminTables && AdminTables.initAdminForm) {
+            AdminTables.initAdminForm(document.getElementById('subject-edit-form'));
+        }
+    });
+</script>
+@endpush

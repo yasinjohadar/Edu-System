@@ -7,72 +7,78 @@
 @section('content')
     <div class="main-content app-content">
         <div class="container-fluid">
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1">مسارات الحافلات</h5>
+            @include('admin.partials.flash-alerts')
+
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>مسارات الحافلات</h1>
+                    <p>إدارة مسارات النقل المدرسي</p>
                 </div>
+                @can('bus-route-create')
+                    <a href="{{ route('admin.bus-routes.create') }}" class="admin-btn admin-btn-primary">
+                        <i class="ri-add-line"></i> إضافة مسار
+                    </a>
+                @endcan
             </div>
 
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="card">
-                        <div class="card-header align-items-center d-flex gap-3">
-                            <div class="d-flex gap-2">
-                                <a href="{{ route('admin.bus-routes.create') }}" class="btn btn-primary btn-sm">إضافة مسار جديد</a>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-striped table-hover align-middle table-nowrap mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>#</th>
-                                            <th>اسم المسار</th>
-                                            <th>رقم المسار</th>
-                                            <th>المسافة</th>
-                                            <th>الرسوم</th>
-                                            <th>الحالة</th>
-                                            <th>العمليات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($routes as $route)
-                                            <tr>
-                                                <td>{{ $route->id }}</td>
-                                                <td>{{ $route->route_name }}</td>
-                                                <td>{{ $route->route_number }}</td>
-                                                <td>{{ $route->distance }} km</td>
-                                                <td>{{ number_format($route->fee, 2) }}</td>
-                                                <td>
-                                                    @if($route->is_active)
-                                                        <span class="badge bg-success">نشط</span>
-                                                    @else
-                                                        <span class="badge bg-danger">غير نشط</span>
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex gap-2">
-                                                        <a href="{{ route('admin.bus-routes.show', $route) }}" class="btn btn-sm btn-info">عرض</a>
-                                                        <a href="{{ route('admin.bus-routes.edit', $route) }}" class="btn btn-sm btn-primary">تعديل</a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="7" class="text-center">لا توجد مسارات</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="mt-3">
-                                {{ $routes->links() }}
-                            </div>
-                        </div>
+            <div class="admin-page-card">
+                <div class="admin-table-wrap">
+                    <div class="table-responsive">
+                        <table class="admin-data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>اسم المسار</th>
+                                    <th>رقم المسار</th>
+                                    <th>المسافة</th>
+                                    <th>الرسوم</th>
+                                    <th>الحالة</th>
+                                    <th>العمليات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($routes as $route)
+                                    <tr>
+                                        <th scope="row" class="row-number">{{ $routes->firstItem() + $loop->index }}</th>
+                                        <td><strong>{{ $route->route_name }}</strong></td>
+                                        <td><span class="admin-badge admin-badge-muted">{{ $route->route_number }}</span></td>
+                                        <td>{{ $route->distance ? $route->distance . ' كم' : '—' }}</td>
+                                        <td>{{ number_format($route->fee, 2) }} ر.س</td>
+                                        <td>
+                                            <span class="admin-badge {{ $route->is_active ? 'admin-badge-success' : 'admin-badge-danger' }}">
+                                                {{ $route->is_active ? 'نشط' : 'غير نشط' }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="admin-action-group">
+                                                @can('bus-route-show')
+                                                    <a href="{{ route('admin.bus-routes.show', $route) }}" class="admin-action-btn admin-action-view" title="عرض"><i class="ri-eye-line"></i></a>
+                                                @endcan
+                                                @can('bus-route-edit')
+                                                    <a href="{{ route('admin.bus-routes.edit', $route) }}" class="admin-action-btn admin-action-edit" title="تعديل"><i class="ri-edit-line"></i></a>
+                                                @endcan
+                                                @can('bus-route-delete')
+                                                    <button type="button" class="admin-action-btn admin-action-delete" title="حذف"
+                                                            data-delete-url="{{ route('admin.bus-routes.destroy', $route) }}"
+                                                            data-delete-message="هل أنت متأكد من حذف المسار <strong>{{ $route->route_name }}</strong>؟">
+                                                        <i class="ri-delete-bin-line"></i>
+                                                    </button>
+                                                @endcan
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="7"><div class="admin-empty-state"><i class="ri-route-line"></i> لا توجد مسارات</div></td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
+                </div>
+                <div class="admin-table-footer mt-3">
+                    <div class="admin-pagination">{{ $routes->links() }}</div>
                 </div>
             </div>
         </div>
     </div>
+    @include('admin.components.delete-modal')
 @stop
-

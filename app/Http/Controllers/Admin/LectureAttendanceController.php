@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\LectureAttendance;
 use App\Models\OnlineLecture;
@@ -10,13 +11,12 @@ use Illuminate\Http\Request;
 
 class LectureAttendanceController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:lecture-attendance-list')->only('index', 'show');
-        $this->middleware('permission:lecture-attendance-create')->only('create', 'store');
-        $this->middleware('permission:lecture-attendance-edit')->only('edit', 'update');
-        $this->middleware('permission:lecture-attendance-delete')->only('destroy');
+        $this->authorizeAdminResource('lecture-attendance');
     }
 
     public function index(Request $request)

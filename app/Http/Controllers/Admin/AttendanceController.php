@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Section;
@@ -11,9 +12,12 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('attendance');
     }
 
     /**
@@ -21,38 +25,57 @@ class AttendanceController extends Controller
      */
     public function index(Request $request)
     {
+        $attendances = $this->buildAttendancesQuery($request)->paginate(20)->withQueryString();
+        $sections = Section::with('class.grade')->where('is_active', true)->get();
+        $students = Student::with('user')->where('status', 'active')->get();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.attendances-table-body', compact('attendances'))->render(),
+                'extra' => view('admin.partials.attendances-table-footer', compact('attendances'))->render(),
+                'from' => $attendances->firstItem(),
+                'to' => $attendances->lastItem(),
+                'total' => $attendances->total(),
+            ]);
+        }
+
+        return view('admin.pages.attendances.index', compact('attendances', 'sections', 'students'));
+    }
+
+    private function buildAttendancesQuery(Request $request)
+    {
         $query = Attendance::with(['student.user', 'section.class.grade', 'markedBy']);
 
-        // فلترة حسب الفصل
         if ($request->filled('section_id')) {
             $query->where('section_id', $request->section_id);
         }
 
-        // فلترة حسب التاريخ
         if ($request->filled('date')) {
             $query->whereDate('date', $request->date);
         } else {
             $query->whereDate('date', today());
         }
 
-        // فلترة حسب الحالة
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        // فلترة حسب الطالب
         if ($request->filled('student_id')) {
             $query->where('student_id', $request->student_id);
         }
 
-        $attendances = $query->orderBy('date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        if ($request->filled('query')) {
+            $search = $request->input('query');
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('student.user', function ($uq) use ($search) {
+                    $uq->where('name', 'like', "%{$search}%");
+                })->orWhereHas('student', function ($sq) use ($search) {
+                    $sq->where('student_code', 'like', "%{$search}%");
+                });
+            });
+        }
 
-        $sections = Section::with('class.grade')->where('is_active', true)->get();
-        $students = Student::with('user')->where('status', 'active')->get();
-
-        return view('admin.pages.attendances.index', compact('attendances', 'sections', 'students'));
+        return $query->orderBy('date', 'desc')->orderBy('created_at', 'desc');
     }
 
     /**

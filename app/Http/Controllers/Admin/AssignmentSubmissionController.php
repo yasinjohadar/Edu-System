@@ -17,7 +17,8 @@ class AssignmentSubmissionController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:assignment-submission-list|assignment-submission-view|assignment-submission-grade', ['only' => ['index', 'show']]);
+        $this->middleware('permission:assignment-submission-list', ['only' => ['index']]);
+        $this->middleware('permission:assignment-submission-view', ['only' => ['show', 'downloadFiles']]);
         $this->middleware('permission:assignment-submission-grade', ['only' => ['grade', 'requestResubmission']]);
     }
 

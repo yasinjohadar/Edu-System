@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\ExamQuestion;
@@ -13,6 +14,15 @@ use Illuminate\Support\Facades\Log;
 
 class ExamController extends Controller
 {
+    use AuthorizesAdminResource;
+
+
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->authorizeAdminResource('exam', true, ['exam-publish' => ['publish', 'unpublish', 'statistics']]);
+    }
+
     /**
      * Display a listing of the resource.
      */

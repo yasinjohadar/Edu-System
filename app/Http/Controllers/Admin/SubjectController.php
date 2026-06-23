@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Subject;
 use App\Models\ClassModel;
@@ -9,21 +10,41 @@ use Illuminate\Http\Request;
 
 class SubjectController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
+        $this->authorizeAdminResource('subject');
     }
 
     public function index(Request $request)
+    {
+        $subjects = $this->buildQuery($request)->paginate(10)->withQueryString();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.subjects-table-body', compact('subjects'))->render(),
+                'extra' => view('admin.partials.subjects-table-footer', compact('subjects'))->render(),
+                'from' => $subjects->firstItem(),
+                'to' => $subjects->lastItem(),
+                'total' => $subjects->total(),
+            ]);
+        }
+
+        return view('admin.pages.subjects.index', compact('subjects'));
+    }
+
+    private function buildQuery(Request $request)
     {
         $subjectsQuery = Subject::query()->orderBy('name');
 
         if ($request->filled('query')) {
             $search = $request->input('query');
             $subjectsQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%$search%")
-                  ->orWhere('name_en', 'like', "%$search%")
-                  ->orWhere('code', 'like', "%$search%");
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('name_en', 'like', "%{$search}%")
+                    ->orWhere('code', 'like', "%{$search}%");
             });
         }
 
@@ -35,9 +56,7 @@ class SubjectController extends Controller
             $subjectsQuery->where('is_active', $request->input('is_active'));
         }
 
-        $subjects = $subjectsQuery->paginate(10);
-
-        return view('admin.pages.subjects.index', compact('subjects'));
+        return $subjectsQuery;
     }
 
     public function create()
@@ -62,7 +81,10 @@ class SubjectController extends Controller
             'classes.*' => 'exists:classes,id',
         ]);
 
-        $subject = Subject::create($request->except('classes'));
+        $subject = Subject::create([
+            ...$request->except(['is_active', 'classes']),
+            'is_active' => $request->has('is_active'),
+        ]);
 
         if ($request->has('classes')) {
             $subject->classes()->attach($request->classes);
@@ -102,7 +124,10 @@ class SubjectController extends Controller
             'classes.*' => 'exists:classes,id',
         ]);
 
-        $subject->update($request->except('classes'));
+        $subject->update([
+            ...$request->except(['is_active', 'classes']),
+            'is_active' => $request->has('is_active'),
+        ]);
 
         if ($request->has('classes')) {
             $subject->classes()->sync($request->classes);

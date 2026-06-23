@@ -10,6 +10,12 @@ use Illuminate\Http\Request;
 
 class ExamQuestionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('permission:exam-question-manage');
+    }
+
     /**
      * Show questions for specific exam
      */

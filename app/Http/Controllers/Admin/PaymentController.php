@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Invoice;
@@ -12,17 +13,51 @@ use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
-        $this->middleware('permission:payment-list|payment-create|payment-edit|payment-delete', ['only' => ['index', 'show']]);
-        $this->middleware('permission:payment-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:payment-edit', ['only' => ['edit', 'update']]);
-        $this->middleware('permission:payment-delete', ['only' => ['destroy']]);
+        $this->middleware('auth');
+        $this->authorizeAdminResource('payment');
     }
 
     public function index(Request $request)
     {
+        $payments = $this->buildPaymentsQuery($request)->paginate(25)->withQueryString();
+        $students = Student::with('user')->where('status', 'active')->get();
+        $paymentMethods = $this->paymentMethods();
+        $paymentStatuses = $this->paymentStatuses();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.payments-table-body', compact('payments'))->render(),
+                'extra' => view('admin.partials.payments-table-footer', compact('payments'))->render(),
+                'from' => $payments->firstItem(),
+                'to' => $payments->lastItem(),
+                'total' => $payments->total(),
+            ]);
+        }
+
+        return view('admin.pages.payments.index', compact('payments', 'students', 'paymentMethods', 'paymentStatuses'));
+    }
+
+    private function buildPaymentsQuery(Request $request)
+    {
         $query = Payment::with(['student.user', 'invoice', 'financialAccount']);
+
+        if ($request->filled('query')) {
+            $search = $request->input('query');
+            $query->where(function ($q) use ($search) {
+                $q->where('payment_number', 'like', "%{$search}%")
+                    ->orWhere('reference_number', 'like', "%{$search}%")
+                    ->orWhereHas('student.user', function ($uq) use ($search) {
+                        $uq->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('student', function ($sq) use ($search) {
+                        $sq->where('student_code', 'like', "%{$search}%");
+                    });
+            });
+        }
 
         if ($request->filled('student_id')) {
             $query->where('student_id', $request->student_id);
@@ -48,14 +83,29 @@ class PaymentController extends Controller
             $query->whereDate('payment_date', '<=', $request->date_to);
         }
 
-        $payments = $query->orderBy('payment_date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(50);
+        return $query->orderBy('payment_date', 'desc')->orderBy('created_at', 'desc');
+    }
 
-        $students = Student::with('user')->where('status', 'active')->get();
-        $invoices = Invoice::where('status', '!=', 'paid')->where('status', '!=', 'cancelled')->get();
+    private function paymentMethods(): array
+    {
+        return [
+            'cash' => 'نقدي',
+            'bank_transfer' => 'تحويل بنكي',
+            'card' => 'بطاقة',
+            'check' => 'شيك',
+            'online' => 'دفع إلكتروني',
+            'other' => 'أخرى',
+        ];
+    }
 
-        return view('admin.pages.payments.index', compact('payments', 'students', 'invoices'));
+    private function paymentStatuses(): array
+    {
+        return [
+            'pending' => 'معلق',
+            'completed' => 'مكتمل',
+            'failed' => 'فاشل',
+            'refunded' => 'مسترد',
+        ];
     }
 
     public function create(Request $request)

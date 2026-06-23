@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Assignment;
 use App\Models\Subject;
@@ -15,13 +16,12 @@ use Carbon\Carbon;
 
 class AssignmentController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:assignment-list|assignment-create|assignment-edit|assignment-delete', ['only' => ['index', 'show']]);
-        $this->middleware('permission:assignment-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:assignment-edit', ['only' => ['edit', 'update', 'publish', 'close']]);
-        $this->middleware('permission:assignment-delete', ['only' => ['destroy']]);
+        $this->authorizeAdminResource('assignment', true, ['assignment-publish' => ['publish', 'close']]);
     }
 
     /**

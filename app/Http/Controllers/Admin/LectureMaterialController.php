@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\LectureMaterial;
 use App\Models\OnlineLecture;
@@ -10,13 +11,12 @@ use Illuminate\Support\Facades\Storage;
 
 class LectureMaterialController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:lecture-material-list')->only('index', 'show');
-        $this->middleware('permission:lecture-material-create')->only('create', 'store');
-        $this->middleware('permission:lecture-material-edit')->only('edit', 'update');
-        $this->middleware('permission:lecture-material-delete')->only('destroy');
+        $this->authorizeAdminResource('lecture-material');
     }
 
     public function index(Request $request)

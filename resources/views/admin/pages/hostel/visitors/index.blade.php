@@ -18,7 +18,9 @@
                     <div class="card">
                         <div class="card-header align-items-center d-flex gap-3">
                             <div class="d-flex gap-2">
-                                <a href="{{ route('admin.visitors.create') }}" class="btn btn-primary btn-sm">إضافة زائر جديد</a>
+                                @can('visitor-create')
+                                    <a href="{{ route('admin.visitors.create') }}" class="btn btn-primary btn-sm">إضافة زائر جديد</a>
+                                @endcan
                             </div>
                         </div>
                         <div class="card-body">
@@ -44,8 +46,12 @@
                                                 <td>{{ $visitor->visit_date->format('Y-m-d H:i') }}</td>
                                                 <td>
                                                     <div class="d-flex gap-2">
-                                                        <a href="{{ route('admin.visitors.show', $visitor) }}" class="btn btn-sm btn-info">عرض</a>
-                                                        <a href="{{ route('admin.visitors.edit', $visitor) }}" class="btn btn-sm btn-primary">تعديل</a>
+                                                        @can('visitor-show')
+                                                            <a href="{{ route('admin.visitors.show', $visitor) }}" class="btn btn-sm btn-info">عرض</a>
+                                                        @endcan
+                                                        @can('visitor-edit')
+                                                            <a href="{{ route('admin.visitors.edit', $visitor) }}" class="btn btn-sm btn-primary">تعديل</a>
+                                                        @endcan
                                                     </div>
                                                 </td>
                                             </tr>

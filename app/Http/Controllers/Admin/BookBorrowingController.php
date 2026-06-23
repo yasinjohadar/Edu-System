@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\BookBorrowing;
 use App\Models\Book;
@@ -11,13 +12,12 @@ use Carbon\Carbon;
 
 class BookBorrowingController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('permission:book-borrowing-list')->only('index', 'show');
-        $this->middleware('permission:book-borrowing-create')->only('create', 'store');
-        $this->middleware('permission:book-borrowing-edit')->only('edit', 'update', 'return');
-        $this->middleware('permission:book-borrowing-delete')->only('destroy');
+        $this->authorizeAdminResource('book-borrowing', true, ['book-borrowing-return' => ['return']]);
     }
 
     public function index(Request $request)

@@ -46,5 +46,6 @@
 
 <!-- Custom JS -->
 <script src="{{ asset('assets/js/custom.js') }}"></script>
+<script src="{{ asset('assets/js/admin-tables.js') }}"></script>
 
 @stack('scripts')

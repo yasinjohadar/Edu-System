@@ -24,6 +24,19 @@ class ExportController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+        $this->middleware('permission:export-students', ['only' => ['students']]);
+        $this->middleware('permission:export-teachers', ['only' => ['teachers']]);
+        $this->middleware('permission:export-classes', ['only' => ['classes']]);
+        $this->middleware('permission:export-sections', ['only' => ['sections']]);
+        $this->middleware('permission:export-subjects', ['only' => ['subjects']]);
+        $this->middleware('permission:export-attendances', ['only' => ['attendances']]);
+        $this->middleware('permission:export-grade-records', ['only' => ['gradeRecords']]);
+        $this->middleware('permission:export-invoices', ['only' => ['invoices']]);
+        $this->middleware('permission:export-payments', ['only' => ['payments']]);
+        $this->middleware('permission:export-books', ['only' => ['books']]);
+        $this->middleware('permission:export-book-borrowings', ['only' => ['bookBorrowings']]);
+        $this->middleware('permission:export-exams', ['only' => ['exams']]);
+        $this->middleware('permission:export-assignments', ['only' => ['assignments']]);
     }
 
     /**

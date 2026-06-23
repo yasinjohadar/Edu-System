@@ -18,7 +18,9 @@
                     <div class="card">
                         <div class="card-header align-items-center d-flex gap-3">
                             <div class="d-flex gap-2">
-                                <a href="{{ route('admin.student-accommodations.create') }}" class="btn btn-primary btn-sm">إضافة إقامة جديدة</a>
+                                @can('student-accommodation-create')
+                                    <a href="{{ route('admin.student-accommodations.create') }}" class="btn btn-primary btn-sm">إضافة إقامة جديدة</a>
+                                @endcan
                             </div>
                         </div>
                         <div class="card-body">
@@ -48,8 +50,12 @@
                                                 <td><span class="badge bg-info">{{ $accommodation->status }}</span></td>
                                                 <td>
                                                     <div class="d-flex gap-2">
-                                                        <a href="{{ route('admin.student-accommodations.show', $accommodation) }}" class="btn btn-sm btn-info">عرض</a>
-                                                        <a href="{{ route('admin.student-accommodations.edit', $accommodation) }}" class="btn btn-sm btn-primary">تعديل</a>
+                                                        @can('student-accommodation-show')
+                                                            <a href="{{ route('admin.student-accommodations.show', $accommodation) }}" class="btn btn-sm btn-info">عرض</a>
+                                                        @endcan
+                                                        @can('student-accommodation-edit')
+                                                            <a href="{{ route('admin.student-accommodations.edit', $accommodation) }}" class="btn btn-sm btn-primary">تعديل</a>
+                                                        @endcan
                                                     </div>
                                                 </td>
                                             </tr>

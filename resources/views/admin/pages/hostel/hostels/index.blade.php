@@ -18,7 +18,9 @@
                     <div class="card">
                         <div class="card-header align-items-center d-flex gap-3">
                             <div class="d-flex gap-2">
-                                <a href="{{ route('admin.hostels.create') }}" class="btn btn-primary btn-sm">إضافة نزل جديد</a>
+                                @can('hostel-create')
+                                    <a href="{{ route('admin.hostels.create') }}" class="btn btn-primary btn-sm">إضافة نزل جديد</a>
+                                @endcan
                             </div>
                         </div>
                         <div class="card-body">
@@ -54,8 +56,12 @@
                                                 </td>
                                                 <td>
                                                     <div class="d-flex gap-2">
-                                                        <a href="{{ route('admin.hostels.show', $hostel) }}" class="btn btn-sm btn-info">عرض</a>
-                                                        <a href="{{ route('admin.hostels.edit', $hostel) }}" class="btn btn-sm btn-primary">تعديل</a>
+                                                        @can('hostel-show')
+                                                            <a href="{{ route('admin.hostels.show', $hostel) }}" class="btn btn-sm btn-info">عرض</a>
+                                                        @endcan
+                                                        @can('hostel-edit')
+                                                            <a href="{{ route('admin.hostels.edit', $hostel) }}" class="btn btn-sm btn-primary">تعديل</a>
+                                                        @endcan
                                                     </div>
                                                 </td>
                                             </tr>

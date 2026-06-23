@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\AuthorizesAdminResource;
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
 use App\Models\Section;
@@ -12,12 +13,12 @@ use Illuminate\Support\Facades\DB;
 
 class ScheduleController extends Controller
 {
+    use AuthorizesAdminResource;
+
     public function __construct()
     {
-        $this->middleware('permission:schedule-list|schedule-create|schedule-edit|schedule-delete', ['only' => ['index', 'show']]);
-        $this->middleware('permission:schedule-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:schedule-edit', ['only' => ['edit', 'update']]);
-        $this->middleware('permission:schedule-delete', ['only' => ['destroy']]);
+        $this->middleware('auth');
+        $this->authorizeAdminResource('schedule');
     }
 
     /**
@@ -25,31 +26,46 @@ class ScheduleController extends Controller
      */
     public function index(Request $request)
     {
+        $schedules = $this->buildSchedulesQuery($request)->paginate(50)->withQueryString();
+        $sections = Section::with('class')->where('is_active', true)->get();
+        $teachers = Teacher::with('user')->get();
+        $days = $this->getScheduleDays();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.schedules-table-body', compact('schedules'))->render(),
+                'extra' => view('admin.partials.schedules-table-footer', compact('schedules'))->render(),
+                'from' => $schedules->firstItem(),
+                'to' => $schedules->lastItem(),
+                'total' => $schedules->total(),
+            ]);
+        }
+
+        return view('admin.pages.schedules.index', compact('schedules', 'sections', 'teachers', 'days'));
+    }
+
+    private function buildSchedulesQuery(Request $request)
+    {
         $query = Schedule::with(['section.class', 'subject', 'teacher.user']);
 
-        // فلترة حسب الفصل
         if ($request->filled('section_id')) {
             $query->where('section_id', $request->section_id);
         }
 
-        // فلترة حسب المعلم
         if ($request->filled('teacher_id')) {
             $query->where('teacher_id', $request->teacher_id);
         }
 
-        // فلترة حسب اليوم
         if ($request->filled('day_of_week')) {
             $query->where('day_of_week', $request->day_of_week);
         }
 
-        $schedules = $query->orderBy('day_of_week')
-            ->orderBy('order')
-            ->orderBy('start_time')
-            ->paginate(50);
+        return $query->orderBy('day_of_week')->orderBy('order')->orderBy('start_time');
+    }
 
-        $sections = Section::with('class')->where('is_active', true)->get();
-        $teachers = Teacher::with('user')->get();
-        $days = [
+    private function getScheduleDays(): array
+    {
+        return [
             'sunday' => 'الأحد',
             'monday' => 'الإثنين',
             'tuesday' => 'الثلاثاء',
@@ -58,8 +74,6 @@ class ScheduleController extends Controller
             'friday' => 'الجمعة',
             'saturday' => 'السبت',
         ];
-
-        return view('admin.pages.schedules.index', compact('schedules', 'sections', 'teachers', 'days'));
     }
 
     /**

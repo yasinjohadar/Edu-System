@@ -6,68 +6,89 @@
 
 @section('content')
     @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <ul class="mb-0">
                 @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
+                    <li class="small">{{ $error }}</li>
                 @endforeach
             </ul>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
-    <!-- Start::app-content -->
     <div class="main-content app-content">
         <div class="container-fluid">
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1">تعديل الفاتورة</h5>
+
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>تعديل الفاتورة</h1>
+                    <p>{{ $invoice->invoice_number }}</p>
                 </div>
+                <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="admin-btn admin-btn-secondary">
+                    <i class="ri-arrow-right-line"></i>
+                    العودة
+                </a>
             </div>
 
-            <div class="row">
-                <div class="col-xl-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">معلومات الفاتورة</h5>
-                        </div>
-                        <div class="card-body">
-                            <form action="{{ route('admin.invoices.update', $invoice->id) }}" method="POST" id="invoiceForm">
-                                @csrf
-                                @method('PUT')
-                                
-                                <div class="row mb-4">
-                                    <div class="col-md-6">
-                                        <label class="form-label">الطالب</label>
+            <div class="admin-page-card">
+                <form action="{{ route('admin.invoices.update', $invoice->id) }}" method="POST" id="invoiceForm" class="admin-form">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="admin-form-body">
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-blue">
+                                    <i class="ri-file-list-3-line"></i>
+                                </div>
+                                <div>
+                                    <h3>معلومات الفاتورة</h3>
+                                    <p>التواريخ والطالب</p>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">الطالب</label>
                                         <input type="text" class="form-control" value="{{ $invoice->student->user->name ?? 'غير محدد' }} ({{ $invoice->student->student_code }})" disabled>
-                                        <small class="text-muted">لا يمكن تغيير الطالب</small>
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label">تاريخ الفاتورة <span class="text-danger">*</span></label>
-                                        <input type="date" name="invoice_date" class="form-control" value="{{ old('invoice_date', $invoice->invoice_date->format('Y-m-d')) }}" required>
-                                        @error('invoice_date')
-                                            <div class="text-danger">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-3">
-                                        <label class="form-label">تاريخ الاستحقاق <span class="text-danger">*</span></label>
-                                        <input type="date" name="due_date" class="form-control" value="{{ old('due_date', $invoice->due_date->format('Y-m-d')) }}" required>
-                                        @error('due_date')
-                                            <div class="text-danger">{{ $message }}</div>
-                                        @enderror
+                                        <small class="admin-form-hint">لا يمكن تغيير الطالب</small>
                                     </div>
                                 </div>
-
-                                <div class="card mb-4">
-                                    <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">عناصر الفاتورة</h6>
-                                        <button type="button" class="btn btn-sm btn-primary" id="addItemBtn">
-                                            <i class="fa-solid fa-plus"></i> إضافة عنصر
-                                        </button>
+                                <div class="col-md-3">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">تاريخ الفاتورة <span class="required">*</span></label>
+                                        <input type="date" name="invoice_date" class="form-control" value="{{ old('invoice_date', $invoice->invoice_date->format('Y-m-d')) }}" required>
+                                        @error('invoice_date')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
                                     </div>
-                                    <div class="card-body">
-                                        <div id="itemsContainer">
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">تاريخ الاستحقاق <span class="required">*</span></label>
+                                        <input type="date" name="due_date" class="form-control" value="{{ old('due_date', $invoice->due_date->format('Y-m-d')) }}" required>
+                                        @error('due_date')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-green">
+                                    <i class="ri-list-check-2"></i>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center flex-grow-1">
+                                    <div>
+                                        <h3>عناصر الفاتورة</h3>
+                                        <p>البنود والمبالغ</p>
+                                    </div>
+                                    <button type="button" class="admin-btn admin-btn-primary admin-btn-sm" id="addItemBtn">
+                                        <i class="ri-add-line"></i> إضافة عنصر
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="itemsContainer">
                                             @foreach($invoice->items as $index => $item)
                                             <div class="item-row mb-3 p-3 border rounded">
                                                 <div class="row">
@@ -118,61 +139,79 @@
                                                 </div>
                                             </div>
                                             @endforeach
-                                        </div>
-                                    </div>
-                                </div>
+                            </div>
+                        </div>
 
-                                <div class="row mb-4">
-                                    <div class="col-md-6">
-                                        <label class="form-label">ملاحظات</label>
+                        <div class="admin-form-section">
+                            <div class="admin-form-section-head">
+                                <div class="admin-section-icon admin-section-icon-purple">
+                                    <i class="ri-sticky-note-line"></i>
+                                </div>
+                                <div>
+                                    <h3>ملاحظات وإجماليات</h3>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">ملاحظات</label>
                                         <textarea name="notes" class="form-control" rows="3">{{ old('notes', $invoice->notes) }}</textarea>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">شروط الدفع</label>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">شروط الدفع</label>
                                         <textarea name="terms" class="form-control" rows="3">{{ old('terms', $invoice->terms) }}</textarea>
                                     </div>
                                 </div>
-
-                                <div class="row mb-4">
-                                    <div class="col-md-6">
-                                        <label class="form-label">الخصم الإجمالي</label>
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">الخصم الإجمالي</label>
                                         <input type="number" name="discount_amount" id="discount_amount" class="form-control" step="0.01" min="0" value="{{ old('discount_amount', $invoice->discount_amount) }}">
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">الضريبة الإجمالية</label>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="admin-form-field">
+                                        <label class="admin-form-label">الضريبة الإجمالية</label>
                                         <input type="number" name="tax_amount" id="tax_amount" class="form-control" step="0.01" min="0" value="{{ old('tax_amount', $invoice->tax_amount) }}">
                                     </div>
                                 </div>
+                            </div>
 
-                                <div class="card bg-light">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <h6>المجموع الفرعي: <span id="subtotal">{{ number_format($invoice->subtotal, 2) }}</span> ر.س</h6>
-                                            </div>
-                                            <div class="col-md-6 text-end">
-                                                <h4>المبلغ الإجمالي: <span id="total_amount" class="text-primary">{{ number_format($invoice->total_amount, 2) }}</span> ر.س</h4>
-                                            </div>
+                            <div class="admin-detail-card">
+                                <div class="admin-detail-card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <span>المجموع الفرعي: <strong id="subtotal">{{ number_format($invoice->subtotal, 2) }}</strong> ر.س</span>
+                                        </div>
+                                        <div class="col-md-6 text-end">
+                                            <h4 class="mb-0">المبلغ الإجمالي: <span id="total_amount" class="text-primary">{{ number_format($invoice->total_amount, 2) }}</span> ر.س</h4>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="d-flex gap-2 mt-4">
-                                    <button type="submit" class="btn btn-primary">تحديث الفاتورة</button>
-                                    <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="btn btn-secondary">إلغاء</a>
-                                </div>
-                            </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+
+                    <div class="admin-form-footer">
+                        <button type="submit" class="admin-btn admin-btn-primary">
+                            <i class="ri-save-line"></i>
+                            حفظ التعديلات
+                        </button>
+                        <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="admin-btn admin-btn-secondary">إلغاء</a>
+                    </div>
+                </form>
             </div>
+
         </div>
     </div>
-    <!-- End::app-content -->
 @stop
 
 @push('scripts')
 <script>
+document.addEventListener('DOMContentLoaded', function () {
+    AdminTables.initAdminForm('#invoiceForm');
 let itemIndex = {{ $invoice->items->count() }};
 
 document.getElementById('addItemBtn').addEventListener('click', function() {
@@ -272,6 +311,7 @@ document.querySelectorAll('.item-row').forEach(function(itemRow) {
 
 document.getElementById('discount_amount').addEventListener('input', calculateTotals);
 document.getElementById('tax_amount').addEventListener('input', calculateTotals);
+});
 </script>
 @endpush
 
