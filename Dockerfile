@@ -21,7 +21,11 @@ RUN npm run build
 # =========================================
 # Stage 2: Install Composer dependencies
 # =========================================
-FROM composer:2-php8.4 AS vendor
+FROM serversideup/php:8.4-fpm-nginx AS vendor
+
+USER root
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
@@ -71,7 +75,7 @@ COPY --chown=www-data:www-data . .
 COPY --from=vendor --chown=www-data:www-data /app/vendor ./vendor
 COPY --from=assets --chown=www-data:www-data /app/public/build ./public/build
 
-COPY --from=composer:2-php8.4 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 RUN composer dump-autoload --optimize --no-dev --no-scripts \
     && chown -R www-data:www-data storage bootstrap/cache \
