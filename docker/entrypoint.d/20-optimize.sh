@@ -15,7 +15,12 @@ su -s /bin/sh www-data -c "php artisan view:clear"
 
 su -s /bin/sh www-data -c "php artisan config:cache"
 su -s /bin/sh www-data -c "php artisan route:cache"
-su -s /bin/sh www-data -c "php artisan view:cache"
 su -s /bin/sh www-data -c "php artisan event:cache"
+
+if su -s /bin/sh www-data -c "php artisan view:cache" 2>/dev/null; then
+    echo "View cache warmed."
+else
+    echo "WARNING: view:cache failed (non-fatal). Views will compile on first request."
+fi
 
 echo "Application caches warmed."
