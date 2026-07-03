@@ -1,0 +1,54 @@
+x-app-common: &app-common
+  build: .
+  restart: unless-stopped
+  volumes:
+    - storage-public:/var/www/html/storage/app/public
+    - storage-private:/var/www/html/storage/app/private
+  depends_on:
+    redis:
+      condition: service_healthy
+
+services:
+  app:
+    <<: *app-common
+    environment:
+      RUN_MIGRATIONS: "true"
+      LOG_CHANNEL: stderr
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8080/up') === false ? 1 : 0);"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  queue:
+    <<: *app-common
+    environment:
+      RUN_MIGRATIONS: "false"
+      LOG_CHANNEL: stderr
+      AUTORUN_ENABLED: "false"
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+
+  scheduler:
+    <<: *app-common
+    environment:
+      RUN_MIGRATIONS: "false"
+      LOG_CHANNEL: stderr
+      AUTORUN_ENABLED: "false"
+    command: ["php", "artisan", "schedule:work"]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  storage-public:
+  storage-private:
+  redis-data:
