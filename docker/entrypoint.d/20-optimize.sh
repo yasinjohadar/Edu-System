@@ -4,7 +4,8 @@ set -e
 cd /var/www/html
 
 if [ -z "$APP_KEY" ]; then
-    echo "APP_KEY is missing, generating one..."
+    echo "WARNING: APP_KEY is not set in environment variables."
+    echo "Generating a temporary key in .env — set APP_KEY in Coolify for production."
     su -s /bin/sh www-data -c "php artisan key:generate --force"
 fi
 
