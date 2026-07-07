@@ -68,8 +68,11 @@
                             @endforeach
                         </select>
 
-                        <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}" title="من تاريخ">
-                        <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}" title="إلى تاريخ">
+                        <div class="admin-filter-dates">
+                            <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}" title="من تاريخ">
+                            <span class="admin-filter-dates-sep">—</span>
+                            <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}" title="إلى تاريخ">
+                        </div>
 
                         <button type="button" class="admin-btn admin-btn-danger" data-admin-filter-reset>
                             <i class="ri-refresh-line"></i>

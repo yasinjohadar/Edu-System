@@ -12,6 +12,13 @@
         </div>
     @endif
 
+    @if (\Session::has('error'))
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {!! \Session::get('error') !!}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <div class="main-content app-content">
         <div class="container-fluid">
 
@@ -20,10 +27,12 @@
                     <h1>كافة المستخدمين</h1>
                     <p>إدارة حسابات النظام والصلاحيات والحالة</p>
                 </div>
-                <a href="{{ route('users.create') }}" class="admin-btn admin-btn-primary">
-                    <i class="ri-user-add-line"></i>
-                    إنشاء مستخدم جديد
-                </a>
+                @can('user-create')
+                    <a href="{{ route('users.create') }}" class="admin-btn admin-btn-primary">
+                        <i class="ri-user-add-line"></i>
+                        إنشاء مستخدم جديد
+                    </a>
+                @endcan
             </div>
 
             <div class="admin-page-card">

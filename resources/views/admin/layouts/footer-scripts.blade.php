@@ -43,6 +43,7 @@
 
 <!-- Custom-Switcher JS -->
 <script src="{{ asset('assets/js/custom-switcher.min.js') }}"></script>
+<script src="{{ asset('assets/js/rtl-lock.js') }}"></script>
 
 <!-- Custom JS -->
 <script src="{{ asset('assets/js/custom.js') }}"></script>

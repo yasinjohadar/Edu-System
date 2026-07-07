@@ -495,3 +495,57 @@ headerbtn1.forEach((button) => {
   });
 });
 /* for notifications dropdown */
+
+/* تمييز العنصر النشط في السايدبار حسب المسار */
+(function () {
+  function normalizePath(path) {
+    return path.replace(/\/+$/, "") || "/";
+  }
+
+  function highlightSidebarActive() {
+    const currentPath = normalizePath(window.location.pathname);
+
+    document.querySelectorAll(".app-sidebar .side-menu__item[href]").forEach((link) => {
+      const href = link.getAttribute("href");
+      if (!href || href.startsWith("javascript")) {
+        return;
+      }
+
+      let linkPath;
+      try {
+        linkPath = normalizePath(new URL(href, window.location.origin).pathname);
+      } catch {
+        return;
+      }
+
+      const isMatch =
+        currentPath === linkPath ||
+        (linkPath !== "/" && currentPath.startsWith(linkPath + "/"));
+
+      if (!isMatch) {
+        return;
+      }
+
+      link.classList.add("active");
+      const slide = link.closest(".slide");
+      slide?.classList.add("active");
+
+      let menu = link.closest(".slide-menu");
+      while (menu) {
+        menu.style.display = "block";
+        const parentSlide = menu.closest(".slide.has-sub");
+        if (parentSlide) {
+          parentSlide.classList.add("open");
+          parentSlide.querySelector(":scope > .side-menu__item")?.classList.add("active");
+        }
+        menu = menu.parentElement?.closest(".slide-menu");
+      }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", highlightSidebarActive);
+  } else {
+    highlightSidebarActive();
+  }
+})();

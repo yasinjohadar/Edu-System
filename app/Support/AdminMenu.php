@@ -68,14 +68,26 @@ class AdminMenu
 
     public static function isActive(string $routeName): bool
     {
-        if (request()->routeIs($routeName)) {
-            return true;
+        $candidates = [$routeName];
+
+        if (str_starts_with($routeName, 'admin.')) {
+            $candidates[] = substr($routeName, 6);
+        } else {
+            $candidates[] = 'admin.'.$routeName;
         }
 
-        if (str_ends_with($routeName, '.index')) {
-            $prefix = substr($routeName, 0, -strlen('.index'));
+        foreach (array_unique($candidates) as $name) {
+            if (request()->routeIs($name)) {
+                return true;
+            }
 
-            return request()->routeIs($prefix . '.*');
+            if (str_ends_with($name, '.index')) {
+                $prefix = substr($name, 0, -strlen('.index'));
+
+                if (request()->routeIs($prefix.'.*')) {
+                    return true;
+                }
+            }
         }
 
         return false;

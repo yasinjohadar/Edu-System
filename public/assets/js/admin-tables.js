@@ -554,6 +554,10 @@
             select.addEventListener('change', () => load(1));
         });
 
+        form.querySelectorAll('input[type="date"]').forEach((input) => {
+            input.addEventListener('change', () => load(1));
+        });
+
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             load(1);

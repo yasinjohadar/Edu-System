@@ -66,10 +66,20 @@ class AssignmentController extends Controller
             });
         }
 
-        $assignments = $query->paginate(20);
+        $assignments = $query->paginate(20)->withQueryString();
         $subjects = Subject::where('is_active', true)->get();
         $teachers = Teacher::with('user')->get();
         $sections = Section::where('is_active', true)->with('class')->get();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'body' => view('admin.partials.assignments-table-body', compact('assignments'))->render(),
+                'extra' => view('admin.partials.assignments-table-footer', compact('assignments'))->render(),
+                'from' => $assignments->firstItem(),
+                'to' => $assignments->lastItem(),
+                'total' => $assignments->total(),
+            ]);
+        }
 
         return view('admin.pages.assignments.index', compact('assignments', 'subjects', 'teachers', 'sections'));
     }

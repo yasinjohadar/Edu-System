@@ -108,16 +108,23 @@
             </div>
 
             {{-- الجداول --}}
-            <div class="row">
+            <div class="row g-3">
                 <div class="col-xl-6 col-lg-12">
-                    <div class="card">
-                        <div class="card-header pb-1">
-                            <h3 class="card-title mb-2">آخر الطلاب المسجلين</h3>
-                            <p class="fs-12 mb-0 text-muted">أحدث {{ $recentStudents->count() }} طالب مسجل في النظام</p>
+                    <div class="dashboard-table-card" style="--table-delay: 0.1s">
+                        <div class="dashboard-table-header">
+                            <div class="dashboard-table-header-main">
+                                <span class="dashboard-table-header-icon icon-students">
+                                    <i class="ri-graduation-cap-line"></i>
+                                </span>
+                                <div>
+                                    <h3>آخر الطلاب المسجلين</h3>
+                                    <p>أحدث {{ $recentStudents->count() }} طالب مسجل في النظام</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body p-0">
+                        <div class="admin-table-wrap">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0">
+                                <table class="admin-data-table mb-0">
                                     <thead>
                                         <tr>
                                             <th>الاسم</th>
@@ -128,10 +135,17 @@
                                     </thead>
                                     <tbody>
                                         @forelse($recentStudents as $student)
-                                            <tr>
+                                            <tr style="--row-index: {{ $loop->index }}">
                                                 <td>
-                                                    <h6 class="mb-0 fs-14">{{ $student->user->name ?? 'غير محدد' }}</h6>
-                                                    <p class="mb-0 text-muted fs-12">{{ $student->student_code }}</p>
+                                                    <div class="dashboard-student-cell">
+                                                        <span class="dashboard-row-avatar">
+                                                            {{ mb_substr($student->user->name ?? '?', 0, 1) }}
+                                                        </span>
+                                                        <div>
+                                                            <h6>{{ $student->user->name ?? 'غير محدد' }}</h6>
+                                                            <p class="student-code">{{ $student->student_code }}</p>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td>{{ $student->class->name ?? 'غير محدد' }}</td>
                                                 <td>{{ $student->section->name ?? 'غير محدد' }}</td>
@@ -139,30 +153,43 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="4" class="text-center text-muted">لا توجد بيانات</td>
+                                                <td colspan="4" class="dashboard-table-empty">
+                                                    <i class="ri-user-search-line"></i>
+                                                    لا توجد بيانات
+                                                </td>
                                             </tr>
                                         @endforelse
                                     </tbody>
                                 </table>
                             </div>
-                            @if($recentStudents->count() > 0)
-                                <div class="card-footer text-center">
-                                    <a href="{{ route('admin.students.index') }}" class="btn btn-sm btn-primary">عرض جميع الطلاب</a>
-                                </div>
-                            @endif
                         </div>
+                        @if($recentStudents->count() > 0)
+                            <div class="dashboard-table-footer">
+                                <a href="{{ route('admin.students.index') }}" class="dashboard-view-all">
+                                    عرض جميع الطلاب
+                                    <i class="ri-arrow-left-s-line"></i>
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
                 <div class="col-xl-6 col-lg-12">
-                    <div class="card">
-                        <div class="card-header pb-1">
-                            <h3 class="card-title mb-2">آخر الفواتير</h3>
-                            <p class="fs-12 mb-0 text-muted">أحدث {{ $recentInvoices->count() }} فاتورة في النظام</p>
+                    <div class="dashboard-table-card" style="--table-delay: 0.2s">
+                        <div class="dashboard-table-header">
+                            <div class="dashboard-table-header-main">
+                                <span class="dashboard-table-header-icon icon-invoices">
+                                    <i class="ri-bill-line"></i>
+                                </span>
+                                <div>
+                                    <h3>آخر الفواتير</h3>
+                                    <p>أحدث {{ $recentInvoices->count() }} فاتورة في النظام</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body p-0">
+                        <div class="admin-table-wrap">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0">
+                                <table class="admin-data-table mb-0">
                                     <thead>
                                         <tr>
                                             <th>رقم الفاتورة</th>
@@ -173,20 +200,20 @@
                                     </thead>
                                     <tbody>
                                         @forelse($recentInvoices as $invoice)
-                                            <tr>
+                                            <tr style="--row-index: {{ $loop->index }}">
                                                 <td>
-                                                    <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="text-primary">
+                                                    <a href="{{ route('admin.invoices.show', $invoice->id) }}" class="dashboard-cell-link">
                                                         {{ $invoice->invoice_number }}
                                                     </a>
                                                 </td>
                                                 <td>{{ $invoice->student->user->name ?? 'غير محدد' }}</td>
-                                                <td>{{ number_format($invoice->total_amount, 2) }} ر.س</td>
+                                                <td class="dashboard-amount">{{ number_format($invoice->total_amount, 2) }} ر.س</td>
                                                 <td>
-                                                    <span class="badge
-                                                        @if($invoice->status == 'paid') bg-success
-                                                        @elseif($invoice->status == 'overdue') bg-danger
-                                                        @elseif($invoice->status == 'partial') bg-warning
-                                                        @else bg-secondary
+                                                    <span class="admin-badge
+                                                        @if($invoice->status == 'paid') admin-badge-success
+                                                        @elseif($invoice->status == 'overdue') admin-badge-danger
+                                                        @elseif($invoice->status == 'partial') admin-badge-warning
+                                                        @else admin-badge-muted
                                                         @endif">
                                                         {{ $invoice->status_name }}
                                                     </span>
@@ -194,32 +221,45 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="4" class="text-center text-muted">لا توجد بيانات</td>
+                                                <td colspan="4" class="dashboard-table-empty">
+                                                    <i class="ri-file-list-3-line"></i>
+                                                    لا توجد بيانات
+                                                </td>
                                             </tr>
                                         @endforelse
                                     </tbody>
                                 </table>
                             </div>
-                            @if($recentInvoices->count() > 0)
-                                <div class="card-footer text-center">
-                                    <a href="{{ route('admin.invoices.index') }}" class="btn btn-sm btn-primary">عرض جميع الفواتير</a>
-                                </div>
-                            @endif
                         </div>
+                        @if($recentInvoices->count() > 0)
+                            <div class="dashboard-table-footer">
+                                <a href="{{ route('admin.invoices.index') }}" class="dashboard-view-all">
+                                    عرض جميع الفواتير
+                                    <i class="ri-arrow-left-s-line"></i>
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
 
             <div class="row mt-3">
                 <div class="col-xl-12">
-                    <div class="card">
-                        <div class="card-header pb-1">
-                            <h3 class="card-title mb-2">آخر المدفوعات</h3>
-                            <p class="fs-12 mb-0 text-muted">أحدث {{ $recentPayments->count() }} دفعة في النظام</p>
+                    <div class="dashboard-table-card" style="--table-delay: 0.3s">
+                        <div class="dashboard-table-header">
+                            <div class="dashboard-table-header-main">
+                                <span class="dashboard-table-header-icon icon-payments">
+                                    <i class="ri-money-dollar-circle-line"></i>
+                                </span>
+                                <div>
+                                    <h3>آخر المدفوعات</h3>
+                                    <p>أحدث {{ $recentPayments->count() }} دفعة في النظام</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body p-0">
+                        <div class="admin-table-wrap">
                             <div class="table-responsive">
-                                <table class="table table-hover mb-0">
+                                <table class="admin-data-table mb-0">
                                     <thead>
                                         <tr>
                                             <th>رقم الدفعة</th>
@@ -232,40 +272,46 @@
                                     </thead>
                                     <tbody>
                                         @forelse($recentPayments as $payment)
-                                            <tr>
+                                            <tr style="--row-index: {{ $loop->index }}">
                                                 <td>
-                                                    <a href="{{ route('admin.payments.show', $payment->id) }}" class="text-primary">
+                                                    <a href="{{ route('admin.payments.show', $payment->id) }}" class="dashboard-cell-link">
                                                         {{ $payment->payment_number }}
                                                     </a>
                                                 </td>
                                                 <td>{{ $payment->student->user->name ?? 'غير محدد' }}</td>
                                                 <td>
                                                     @if($payment->invoice)
-                                                        <a href="{{ route('admin.invoices.show', $payment->invoice->id) }}" class="text-info">
+                                                        <a href="{{ route('admin.invoices.show', $payment->invoice->id) }}" class="dashboard-cell-link-info">
                                                             {{ $payment->invoice->invoice_number }}
                                                         </a>
                                                     @else
                                                         <span class="text-muted">-</span>
                                                     @endif
                                                 </td>
-                                                <td class="fw-bold text-success">{{ number_format($payment->amount, 2) }} ر.س</td>
+                                                <td class="dashboard-amount">{{ number_format($payment->amount, 2) }} ر.س</td>
                                                 <td>{{ $payment->payment_method_name }}</td>
                                                 <td>{{ $payment->payment_date->format('Y-m-d') }}</td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="6" class="text-center text-muted">لا توجد بيانات</td>
+                                                <td colspan="6" class="dashboard-table-empty">
+                                                    <i class="ri-wallet-3-line"></i>
+                                                    لا توجد بيانات
+                                                </td>
                                             </tr>
                                         @endforelse
                                     </tbody>
                                 </table>
                             </div>
-                            @if($recentPayments->count() > 0)
-                                <div class="card-footer text-center">
-                                    <a href="{{ route('admin.payments.index') }}" class="btn btn-sm btn-primary">عرض جميع المدفوعات</a>
-                                </div>
-                            @endif
                         </div>
+                        @if($recentPayments->count() > 0)
+                            <div class="dashboard-table-footer">
+                                <a href="{{ route('admin.payments.index') }}" class="dashboard-view-all">
+                                    عرض جميع المدفوعات
+                                    <i class="ri-arrow-left-s-line"></i>
+                                </a>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

@@ -5,167 +5,197 @@
 @stop
 
 @section('content')
-    <!-- Start::app-content -->
+    @php
+        $statusClasses = [
+            'published' => 'admin-badge-success',
+            'closed' => 'admin-badge-danger',
+            'draft' => 'admin-badge-muted',
+        ];
+        $submissionTypes = is_string($assignment->submission_types)
+            ? json_decode($assignment->submission_types, true)
+            : ($assignment->submission_types ?? []);
+        $typeLabels = ['file' => 'ملفات', 'text' => 'نصوص', 'link' => 'روابط'];
+    @endphp
+
     <div class="main-content app-content">
         <div class="container-fluid">
-            <div class="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
-                <div class="my-auto">
-                    <h5 class="page-title fs-21 mb-1">تفاصيل الواجب</h5>
+
+            <div class="admin-page-header">
+                <div class="page-title-wrap">
+                    <h1>تفاصيل الواجب</h1>
+                    <p>{{ $assignment->assignment_number }} — {{ $assignment->title }}</p>
                 </div>
-                <div>
+                <div class="admin-page-header-actions">
                     @can('assignment-edit')
-                    <a href="{{ route('admin.assignments.edit', $assignment->id) }}" class="btn btn-warning btn-sm">
-                        <i class="fa-solid fa-edit"></i> تعديل
-                    </a>
+                        <a href="{{ route('admin.assignments.edit', $assignment->id) }}" class="admin-btn admin-btn-primary">
+                            <i class="ri-edit-line"></i>
+                            تعديل
+                        </a>
                     @endcan
-                    <a href="{{ route('admin.assignments.submissions.index', $assignment->id) }}" class="btn btn-primary btn-sm">
-                        <i class="fa-solid fa-file-arrow-up"></i> التسليمات ({{ $stats['total_submissions'] }})
+                    <a href="{{ route('admin.assignments.submissions.index', $assignment->id) }}" class="admin-btn admin-btn-secondary">
+                        <i class="ri-upload-2-line"></i>
+                        التسليمات ({{ $stats['total_submissions'] }})
                     </a>
-                    <a href="{{ route('admin.assignments.index') }}" class="btn btn-secondary btn-sm">رجوع</a>
+                    <a href="{{ route('admin.assignments.index') }}" class="admin-btn admin-btn-secondary">
+                        <i class="ri-arrow-right-line"></i>
+                        العودة
+                    </a>
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row g-3">
                 <div class="col-xl-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">{{ $assignment->title }}</h5>
+                    <div class="admin-page-card admin-detail-card">
+                        <div class="admin-detail-card-head">
+                            <div class="section-icon-sm admin-section-icon-blue">
+                                <i class="ri-file-text-line"></i>
+                            </div>
+                            <h3>{{ $assignment->title }}</h3>
+                            <span class="admin-badge {{ $statusClasses[$assignment->status] ?? 'admin-badge-muted' }} ms-auto">
+                                {{ $assignment->status_name }}
+                            </span>
                         </div>
-                        <div class="card-body">
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <strong>رقم الواجب:</strong> {{ $assignment->assignment_number }}
+                        <div class="admin-detail-card-body">
+                            <div class="admin-detail-grid">
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">رقم الواجب</span>
+                                    <span class="detail-value">{{ $assignment->assignment_number }}</span>
                                 </div>
-                                <div class="col-md-6">
-                                    <strong>المادة:</strong> <span class="badge bg-info">{{ $assignment->subject->name ?? 'غير محدد' }}</span>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">المادة</span>
+                                    <span class="detail-value">{{ $assignment->subject->name ?? 'غير محدد' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">المعلم</span>
+                                    <span class="detail-value">{{ $assignment->teacher->user->name ?? 'غير محدد' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">الفصل</span>
+                                    <span class="detail-value">{{ $assignment->section->name ?? 'كل الفصول' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">الدرجة الكلية</span>
+                                    <span class="detail-value text-success">{{ number_format($assignment->total_marks, 2) }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">تاريخ الاستحقاق</span>
+                                    <span class="detail-value">
+                                        {{ $assignment->due_date->format('Y-m-d') }}
+                                        @if ($assignment->isOverdue())
+                                            <span class="admin-badge admin-badge-danger">متأخر</span>
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">وقت الاستحقاق</span>
+                                    <span class="detail-value">{{ $assignment->due_time }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">النشاط</span>
+                                    <span class="detail-value">
+                                        @if ($assignment->is_active)
+                                            <span class="admin-badge admin-badge-success">نشط</span>
+                                        @else
+                                            <span class="admin-badge admin-badge-danger">غير نشط</span>
+                                        @endif
+                                    </span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">السماح بالتأخير</span>
+                                    <span class="detail-value">{{ $assignment->allow_late_submission ? 'نعم' : 'لا' }}</span>
+                                </div>
+                                <div class="admin-detail-item">
+                                    <span class="detail-label">عدد المحاولات</span>
+                                    <span class="detail-value">{{ $assignment->max_attempts ?? 'غير محدود' }}</span>
                                 </div>
                             </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <strong>المعلم:</strong> {{ $assignment->teacher->user->name ?? 'غير محدد' }}
-                                </div>
-                                <div class="col-md-6">
-                                    <strong>الفصل:</strong> {{ $assignment->section->name ?? 'كل الفصول' }}
-                                </div>
-                            </div>
-                            @if($assignment->description)
-                            <div class="mb-3">
-                                <strong>الوصف:</strong>
-                                <p>{{ $assignment->description }}</p>
-                            </div>
+
+                            @if ($assignment->allow_late_submission && $assignment->late_penalty_per_day)
+                                <p class="admin-detail-note">
+                                    غرامة التأخير: {{ number_format($assignment->late_penalty_per_day, 2) }} لكل يوم
+                                </p>
                             @endif
-                            @if($assignment->instructions)
-                            <div class="mb-3">
-                                <strong>التعليمات:</strong>
-                                <p>{{ $assignment->instructions }}</p>
-                            </div>
+
+                            @if ($assignment->description)
+                                <div class="admin-detail-block">
+                                    <span class="detail-label">الوصف</span>
+                                    <p class="admin-detail-text">{{ $assignment->description }}</p>
+                                </div>
                             @endif
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <strong>الدرجة الكلية:</strong> <span class="badge bg-success">{{ number_format($assignment->total_marks, 2) }}</span>
+
+                            @if ($assignment->instructions)
+                                <div class="admin-detail-block">
+                                    <span class="detail-label">التعليمات</span>
+                                    <p class="admin-detail-text">{{ $assignment->instructions }}</p>
                                 </div>
-                                <div class="col-md-4">
-                                    <strong>تاريخ الاستحقاق:</strong> {{ $assignment->due_date->format('Y-m-d') }}
-                                    @if($assignment->isOverdue())
-                                        <span class="badge bg-danger">متأخر</span>
-                                    @endif
+                            @endif
+
+                            @if (! empty($submissionTypes))
+                                <div class="admin-detail-block">
+                                    <span class="detail-label">أنواع التسليم المسموحة</span>
+                                    <div class="admin-detail-tags">
+                                        @foreach ($submissionTypes as $type)
+                                            <span class="admin-badge admin-badge-role">{{ $typeLabels[$type] ?? $type }}</span>
+                                        @endforeach
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <strong>وقت الاستحقاق:</strong> {{ $assignment->due_time }}
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <strong>الحالة:</strong>
-                                    @if($assignment->status == 'published')
-                                        <span class="badge bg-success">{{ $assignment->status_name }}</span>
-                                    @elseif($assignment->status == 'closed')
-                                        <span class="badge bg-danger">{{ $assignment->status_name }}</span>
-                                    @else
-                                        <span class="badge bg-secondary">{{ $assignment->status_name }}</span>
-                                    @endif
-                                </div>
-                                <div class="col-md-6">
-                                    <strong>النشاط:</strong>
-                                    @if($assignment->is_active)
-                                        <span class="badge bg-success">نشط</span>
-                                    @else
-                                        <span class="badge bg-danger">غير نشط</span>
-                                    @endif
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <strong>السماح بالتأخير:</strong> {{ $assignment->allow_late_submission ? 'نعم' : 'لا' }}
-                                    @if($assignment->allow_late_submission)
-                                        <br><small class="text-muted">غرامة: {{ number_format($assignment->late_penalty_per_day, 2) }} لكل يوم</small>
-                                    @endif
-                                </div>
-                                <div class="col-md-6">
-                                    <strong>عدد المحاولات:</strong> {{ $assignment->max_attempts ?? 'غير محدود' }}
-                                </div>
-                            </div>
-                            @php
-                                $submissionTypes = is_string($assignment->submission_types) ? json_decode($assignment->submission_types, true) : ($assignment->submission_types ?? []);
-                            @endphp
-                            <div class="mb-3">
-                                <strong>أنواع التسليم المسموحة:</strong>
-                                @foreach($submissionTypes as $type)
-                                    <span class="badge bg-primary">{{ $type == 'file' ? 'ملفات' : ($type == 'text' ? 'نصوص' : 'روابط') }}</span>
-                                @endforeach
-                            </div>
+                            @endif
                         </div>
                     </div>
 
-                    @if($assignment->attachments->count() > 0)
-                    <div class="card mt-3">
-                        <div class="card-header">
-                            <h5 class="card-title">المرفقات</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="list-group">
-                                @foreach($assignment->attachments as $attachment)
-                                    <div class="list-group-item">
-                                        <a href="{{ asset('storage/' . $attachment->file_path) }}" target="_blank" class="text-decoration-none">
-                                            <i class="fa-solid fa-file"></i> {{ $attachment->file_name }}
-                                        </a>
-                                        <small class="text-muted ms-2">({{ $attachment->formatted_file_size }})</small>
-                                    </div>
+                    @if ($assignment->attachments->count() > 0)
+                        <div class="admin-page-card admin-detail-card mt-3">
+                            <div class="admin-detail-card-head">
+                                <div class="section-icon-sm admin-section-icon-teal">
+                                    <i class="ri-attachment-2"></i>
+                                </div>
+                                <h3>المرفقات</h3>
+                            </div>
+                            <div class="admin-detail-card-body">
+                                @foreach ($assignment->attachments as $attachment)
+                                    <a href="{{ asset('storage/' . $attachment->file_path) }}" target="_blank" class="admin-file-btn">
+                                        <i class="ri-file-line"></i>
+                                        {{ $attachment->file_name }}
+                                        <small class="text-muted">({{ $attachment->formatted_file_size }})</small>
+                                    </a>
                                 @endforeach
                             </div>
                         </div>
-                    </div>
                     @endif
                 </div>
 
                 <div class="col-xl-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="card-title">الإحصائيات</h5>
+                    <div class="admin-page-card admin-detail-card">
+                        <div class="admin-detail-card-head">
+                            <div class="section-icon-sm admin-section-icon-purple">
+                                <i class="ri-bar-chart-box-line"></i>
+                            </div>
+                            <h3>الإحصائيات</h3>
                         </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <strong>إجمالي التسليمات:</strong>
-                                <span class="badge bg-info float-end">{{ $stats['total_submissions'] }}</span>
-                            </div>
-                            <div class="mb-3">
-                                <strong>المصححة:</strong>
-                                <span class="badge bg-success float-end">{{ $stats['graded_submissions'] }}</span>
-                            </div>
-                            <div class="mb-3">
-                                <strong>المعلقة:</strong>
-                                <span class="badge bg-warning float-end">{{ $stats['pending_submissions'] }}</span>
-                            </div>
-                            <div class="mb-3">
-                                <strong>متوسط الدرجات:</strong>
-                                <span class="badge bg-primary float-end">{{ number_format($stats['average_marks'], 2) }}</span>
+                        <div class="admin-detail-card-body">
+                            <div class="admin-stat-grid">
+                                <div class="admin-stat-item">
+                                    <span class="admin-stat-label">إجمالي التسليمات</span>
+                                    <span class="admin-stat-value admin-stat-info">{{ $stats['total_submissions'] }}</span>
+                                </div>
+                                <div class="admin-stat-item">
+                                    <span class="admin-stat-label">المصححة</span>
+                                    <span class="admin-stat-value admin-stat-success">{{ $stats['graded_submissions'] }}</span>
+                                </div>
+                                <div class="admin-stat-item">
+                                    <span class="admin-stat-label">المعلقة</span>
+                                    <span class="admin-stat-value admin-stat-warning">{{ $stats['pending_submissions'] }}</span>
+                                </div>
+                                <div class="admin-stat-item">
+                                    <span class="admin-stat-label">متوسط الدرجات</span>
+                                    <span class="admin-stat-value admin-stat-primary">{{ number_format($stats['average_marks'], 2) }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
-    <!-- End::app-content -->
 @stop
-

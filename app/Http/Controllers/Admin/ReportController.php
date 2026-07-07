@@ -97,13 +97,13 @@ class ReportController extends Controller
 
         if ($request->filled('date_from')) {
             $query->whereHas('gradeRecords', function($q) use ($request) {
-                $q->whereDate('record_date', '>=', $request->date_from);
+                $q->whereDate('exam_date', '>=', $request->date_from);
             });
         }
 
         if ($request->filled('date_to')) {
             $query->whereHas('gradeRecords', function($q) use ($request) {
-                $q->whereDate('record_date', '<=', $request->date_to);
+                $q->whereDate('exam_date', '<=', $request->date_to);
             });
         }
 
@@ -117,10 +117,10 @@ class ReportController extends Controller
                 $gradeRecords = $gradeRecords->where('subject_id', $request->subject_id);
             }
             if ($request->filled('date_from')) {
-                $gradeRecords = $gradeRecords->where('record_date', '>=', $request->date_from);
+                $gradeRecords = $gradeRecords->where('exam_date', '>=', $request->date_from);
             }
             if ($request->filled('date_to')) {
-                $gradeRecords = $gradeRecords->where('record_date', '<=', $request->date_to);
+                $gradeRecords = $gradeRecords->where('exam_date', '<=', $request->date_to);
             }
 
             $stats[$student->id] = [
@@ -160,13 +160,13 @@ class ReportController extends Controller
 
         if ($request->filled('date_from')) {
             $query->whereHas('students.gradeRecords', function($q) use ($request) {
-                $q->whereDate('record_date', '>=', $request->date_from);
+                $q->whereDate('exam_date', '>=', $request->date_from);
             });
         }
 
         if ($request->filled('date_to')) {
             $query->whereHas('students.gradeRecords', function($q) use ($request) {
-                $q->whereDate('record_date', '<=', $request->date_to);
+                $q->whereDate('exam_date', '<=', $request->date_to);
             });
         }
 
@@ -179,10 +179,10 @@ class ReportController extends Controller
             foreach ($class->students as $student) {
                 $grades = $student->gradeRecords;
                 if ($request->filled('date_from')) {
-                    $grades = $grades->where('record_date', '>=', $request->date_from);
+                    $grades = $grades->where('exam_date', '>=', $request->date_from);
                 }
                 if ($request->filled('date_to')) {
-                    $grades = $grades->where('record_date', '<=', $request->date_to);
+                    $grades = $grades->where('exam_date', '<=', $request->date_to);
                 }
                 $allGrades = $allGrades->merge($grades);
             }
@@ -423,14 +423,14 @@ class ReportController extends Controller
         }
 
         if ($request->filled('date_from')) {
-            $query->whereDate('borrowed_at', '>=', $request->date_from);
+            $query->whereDate('borrow_date', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('borrowed_at', '<=', $request->date_to);
+            $query->whereDate('borrow_date', '<=', $request->date_to);
         }
 
-        $borrowings = $query->orderBy('borrowed_at', 'desc')->get();
+        $borrowings = $query->orderBy('borrow_date', 'desc')->get();
 
         // حساب الإحصائيات
         $stats = [
@@ -441,16 +441,18 @@ class ReportController extends Controller
         ];
 
         // إحصائيات الغرامات
-        $finesQuery = Fine::with(['bookBorrowing.student.user', 'bookBorrowing.book']);
+        $finesQuery = Fine::with(['borrowing.student.user', 'borrowing.book']);
 
         if ($request->filled('student_id')) {
-            $finesQuery->whereHas('bookBorrowing', function($q) use ($request) {
+            $finesQuery->whereHas('borrowing', function($q) use ($request) {
                 $q->where('student_id', $request->student_id);
             });
         }
 
         if ($request->filled('status')) {
-            $finesQuery->where('status', $request->status);
+            $finesQuery->whereHas('borrowing', function ($q) use ($request) {
+                $q->where('status', $request->status);
+            });
         }
 
         if ($request->filled('date_from')) {
@@ -469,6 +471,14 @@ class ReportController extends Controller
             'paid_amount' => $fines->where('status', 'paid')->sum('amount'),
             'unpaid_amount' => $fines->where('status', 'unpaid')->sum('amount'),
         ];
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'html' => view('admin.partials.library-report-content', compact(
+                    'borrowings', 'fines', 'stats', 'fineStats'
+                ))->render(),
+            ]);
+        }
 
         return view('admin.pages.reports.library', compact(
             'borrowings', 'fines', 'stats', 'fineStats'
@@ -615,26 +625,46 @@ class ReportController extends Controller
         }
 
         if ($request->filled('date_from')) {
-            $query->whereDate('record_date', '>=', $request->date_from);
+            $query->whereDate('exam_date', '>=', $request->date_from);
         }
 
         if ($request->filled('date_to')) {
-            $query->whereDate('record_date', '<=', $request->date_to);
+            $query->whereDate('exam_date', '<=', $request->date_to);
         }
 
-        $gradeRecords = $query->orderBy('record_date', 'desc')->get();
+        $statsQuery = clone $query;
+        $allRecords = $statsQuery->get();
 
-        // حساب الإحصائيات
         $stats = [
-            'total_records' => $gradeRecords->count(),
-            'average_percentage' => $gradeRecords->avg('percentage') ?? 0,
-            'highest_percentage' => $gradeRecords->max('percentage') ?? 0,
-            'lowest_percentage' => $gradeRecords->min('percentage') ?? 100,
-            'excellent_count' => $gradeRecords->where('percentage', '>=', 90)->count(),
-            'good_count' => $gradeRecords->whereBetween('percentage', [75, 89])->count(),
-            'pass_count' => $gradeRecords->whereBetween('percentage', [50, 74])->count(),
-            'fail_count' => $gradeRecords->where('percentage', '<', 50)->count(),
+            'total_records' => $allRecords->count(),
+            'average_percentage' => $allRecords->avg('percentage') ?? 0,
+            'highest_percentage' => $allRecords->max('percentage') ?? 0,
+            'lowest_percentage' => $allRecords->min('percentage') ?? 100,
+            'excellent_count' => $allRecords->where('percentage', '>=', 90)->count(),
+            'good_count' => $allRecords->whereBetween('percentage', [75, 89])->count(),
+            'pass_count' => $allRecords->whereBetween('percentage', [50, 74])->count(),
+            'fail_count' => $allRecords->where('percentage', '<', 50)->count(),
         ];
+
+        if ($request->filled('tier')) {
+            match ($request->tier) {
+                'excellent' => $query->where('percentage', '>=', 90),
+                'good' => $query->whereBetween('percentage', [75, 89.99]),
+                'pass' => $query->whereBetween('percentage', [50, 74.99]),
+                'fail' => $query->where('percentage', '<', 50),
+                default => null,
+            };
+        }
+
+        $gradeRecords = $query->orderBy('exam_date', 'desc')->get();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'html' => view('admin.partials.grades-report-content', compact(
+                    'gradeRecords', 'stats'
+                ))->render(),
+            ]);
+        }
 
         return view('admin.pages.reports.grades', compact(
             'gradeRecords', 'stats', 'classes', 'sections', 'subjects'

@@ -5,10 +5,13 @@
         document.querySelector("html").setAttribute("data-menu-styles", "dark")
         document.querySelector("html").setAttribute("data-header-styles", "dark")
     }
-    if (localStorage.valexrtl) {
+    {
         let html = document.querySelector('html');
         html.setAttribute("dir", "rtl");
-        document.querySelector("#style")?.setAttribute("href", "../assets/libs/bootstrap/css/bootstrap.rtl.min.css");
+        html.setAttribute("lang", "ar");
+        document.querySelector("#style")?.setAttribute("href", document.querySelector("#style")?.getAttribute("href")?.replace('bootstrap.min.css', 'bootstrap.rtl.min.css') || "../assets/libs/bootstrap/css/bootstrap.rtl.min.css");
+        localStorage.setItem("valexrtl", true);
+        localStorage.removeItem("valexltr");
     }
     if (localStorage.getItem("valexlayout") == "horizontal") {
         document.querySelector("html").setAttribute("data-nav-layout", "horizontal")
